@@ -26,20 +26,16 @@
 		
 		Once configured, change PS.Config.DataProvider = 'pdata' to PS.Config.DataProvider = 'mysql' in pointshop's sh_config.lua.
 	
-]]--
-
+]]
+--
 -- config, change these to match your setup
-
 local mysql_hostname = 'localhost' -- Your MySQL server address.
 local mysql_username = 'root' -- Your MySQL username.
 local mysql_password = '' -- Your MySQL password.
 local mysql_database = 'pointshop' -- Your MySQL database.
 local mysql_port = 3306 -- Your MySQL port. Most likely is 3306.
-
 -- end config, don't change anything below unless you know what you're doing
-
 require('mysqloo')
-
 local db = mysqloo.connect(mysql_hostname, mysql_username, mysql_password, mysql_database, mysql_port)
 
 function db:onConnected()
@@ -60,34 +56,35 @@ function PROVIDER:GetData(ply, callback)
     ]]
     qs = string.format(qs, ply:UniqueID())
     local q = db:query(qs)
-     
+
     function q:onSuccess(data)
         if #data > 0 then
             local row = data[1]
-         
             local points = row.points or 0
             local items = util.JSONToTable(row.items or '{}')
- 
             callback(points, items)
         else
             callback(0, {})
         end
     end
-     
+
     function q:onError(err, sql)
         if db:status() ~= mysqloo.DATABASE_CONNECTED then
             db:connect()
             db:wait()
-        if db:status() ~= mysqloo.DATABASE_CONNECTED then
-            ErrorNoHalt("Re-connection to database server failed.")
-            callback(0, {})
-            return
+
+            if db:status() ~= mysqloo.DATABASE_CONNECTED then
+                ErrorNoHalt("Re-connection to database server failed.")
+                callback(0, {})
+
+                return
             end
         end
+
         MsgN('PointShop MySQL: Query Failed: ' .. err .. ' (' .. sql .. ')')
         q:start()
     end
-     
+
     q:start()
 end
 
@@ -100,20 +97,23 @@ function PROVIDER:SetPoints(ply, points)
     ]]
     qs = string.format(qs, ply:UniqueID(), points or 0)
     local q = db:query(qs)
-     
+
     function q:onError(err, sql)
         if db:status() ~= mysqloo.DATABASE_CONNECTED then
             db:connect()
             db:wait()
-        if db:status() ~= mysqloo.DATABASE_CONNECTED then
-            ErrorNoHalt("Re-connection to database server failed.")
-            return
+
+            if db:status() ~= mysqloo.DATABASE_CONNECTED then
+                ErrorNoHalt("Re-connection to database server failed.")
+
+                return
             end
         end
+
         MsgN('PointShop MySQL: Query Failed: ' .. err .. ' (' .. sql .. ')')
         q:start()
     end
-     
+
     q:start()
 end
 
@@ -126,20 +126,23 @@ function PROVIDER:GivePoints(ply, points)
     ]]
     qs = string.format(qs, ply:UniqueID(), points or 0)
     local q = db:query(qs)
-     
+
     function q:onError(err, sql)
         if db:status() ~= mysqloo.DATABASE_CONNECTED then
             db:connect()
             db:wait()
-        if db:status() ~= mysqloo.DATABASE_CONNECTED then
-            ErrorNoHalt("Re-connection to database server failed.")
-            return
+
+            if db:status() ~= mysqloo.DATABASE_CONNECTED then
+                ErrorNoHalt("Re-connection to database server failed.")
+
+                return
             end
         end
+
         MsgN('PointShop MySQL: Query Failed: ' .. err .. ' (' .. sql .. ')')
         q:start()
     end
-     
+
     q:start()
 end
 
@@ -152,20 +155,23 @@ function PROVIDER:TakePoints(ply, points)
     ]]
     qs = string.format(qs, ply:UniqueID(), points or 0)
     local q = db:query(qs)
-     
+
     function q:onError(err, sql)
         if db:status() ~= mysqloo.DATABASE_CONNECTED then
             db:connect()
             db:wait()
-        if db:status() ~= mysqloo.DATABASE_CONNECTED then
-            ErrorNoHalt("Re-connection to database server failed.")
-            return
+
+            if db:status() ~= mysqloo.DATABASE_CONNECTED then
+                ErrorNoHalt("Re-connection to database server failed.")
+
+                return
             end
         end
+
         MsgN('PointShop MySQL: Query Failed: ' .. err .. ' (' .. sql .. ')')
         q:start()
     end
-     
+
     q:start()
 end
 
@@ -176,7 +182,6 @@ end
 function PROVIDER:GiveItem(ply, item_id, data)
     local tmp = table.Copy(ply.PS_Items)
     tmp[item_id] = data
-
     local qs = [[
     INSERT INTO `pointshop_data` (uniqueid, points, items)
     VALUES ('%s', '0', '%s')
@@ -185,27 +190,29 @@ function PROVIDER:GiveItem(ply, item_id, data)
     ]]
     qs = string.format(qs, ply:UniqueID(), db:escape(util.TableToJSON(tmp)))
     local q = db:query(qs)
-     
+
     function q:onError(err, sql)
         if db:status() ~= mysqloo.DATABASE_CONNECTED then
             db:connect()
             db:wait()
-        if db:status() ~= mysqloo.DATABASE_CONNECTED then
-            ErrorNoHalt("Re-connection to database server failed.")
-            return
+
+            if db:status() ~= mysqloo.DATABASE_CONNECTED then
+                ErrorNoHalt("Re-connection to database server failed.")
+
+                return
             end
         end
+
         MsgN('PointShop MySQL: Query Failed: ' .. err .. ' (' .. sql .. ')')
         q:start()
     end
-     
+
     q:start()
 end
 
 function PROVIDER:TakeItem(ply, item_id)
     local tmp = table.Copy(ply.PS_Items)
     tmp[item_id] = nil
-
     local qs = [[
     INSERT INTO `pointshop_data` (uniqueid, points, items)
     VALUES ('%s', '0', '%s')
@@ -214,23 +221,26 @@ function PROVIDER:TakeItem(ply, item_id)
     ]]
     qs = string.format(qs, ply:UniqueID(), db:escape(util.TableToJSON(tmp)))
     local q = db:query(qs)
-     
+
     function q:onError(err, sql)
         if db:status() ~= mysqloo.DATABASE_CONNECTED then
             db:connect()
             db:wait()
-        if db:status() ~= mysqloo.DATABASE_CONNECTED then
-            ErrorNoHalt("Re-connection to database server failed.")
-            return
+
+            if db:status() ~= mysqloo.DATABASE_CONNECTED then
+                ErrorNoHalt("Re-connection to database server failed.")
+
+                return
             end
         end
+
         MsgN('PointShop MySQL: Query Failed: ' .. err .. ' (' .. sql .. ')')
         q:start()
     end
-     
+
     q:start()
 end
- 
+
 function PROVIDER:SetData(ply, points, items)
     local qs = [[
     INSERT INTO `pointshop_data` (uniqueid, points, items)
@@ -241,19 +251,22 @@ function PROVIDER:SetData(ply, points, items)
     ]]
     qs = string.format(qs, ply:UniqueID(), points or 0, db:escape(util.TableToJSON(items)))
     local q = db:query(qs)
-     
+
     function q:onError(err, sql)
         if db:status() ~= mysqloo.DATABASE_CONNECTED then
             db:connect()
             db:wait()
-        if db:status() ~= mysqloo.DATABASE_CONNECTED then
-            ErrorNoHalt("Re-connection to database server failed.")
-            return
+
+            if db:status() ~= mysqloo.DATABASE_CONNECTED then
+                ErrorNoHalt("Re-connection to database server failed.")
+
+                return
             end
         end
+
         MsgN('PointShop MySQL: Query Failed: ' .. err .. ' (' .. sql .. ')')
         q:start()
     end
-     
+
     q:start()
 end
