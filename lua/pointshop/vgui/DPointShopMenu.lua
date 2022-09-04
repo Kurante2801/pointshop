@@ -297,7 +297,7 @@ function PANEL:Init()
         DScrollPanel:AddItem(ShopCategoryTabLayout)
 
         for _, ITEM in pairs(items) do
-            if ITEM.Category == CATEGORY.Name then
+            if ITEM.Category == CATEGORY.ID then
                 local model = vgui.Create('DPointShopItem')
                 model:SetData(ITEM)
                 model:SetSize(128, 128)

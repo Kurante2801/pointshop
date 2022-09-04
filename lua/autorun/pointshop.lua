@@ -6,5 +6,3 @@ end
 if CLIENT then
     include"pointshop/cl_init.lua"
 end
-
-PS:Initialize()

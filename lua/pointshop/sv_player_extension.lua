@@ -4,22 +4,15 @@ PS_ITEM_MODIFY = 3
 local Player = FindMetaTable('Player')
 
 function Player:PS_PlayerSpawn()
-    if not self:PS_CanPerformAction() then return end
-    -- TTT ( and others ) Fix
-    if TEAM_SPECTATOR ~= nil and self:Team() == TEAM_SPECTATOR then return end
-    if TEAM_SPEC ~= nil and self:Team() == TEAM_SPEC then return end
-    -- Murder Spectator Fix (they don't specify the above enums when making teams)
-    -- https://github.com/mechanicalmind/murder/blob/master/gamemode/sv_spectate.lua#L15
-    if self.Spectating then return end
-
-    timer.Simple(1, function()
-        if not IsValid(self) then return end
+    if not self:PS_CanPerformAction() or PS:IsSpectator(self) then return end
+    timer.Simple(0, function()
+        if not IsValid(self) or not self:PS_CanPerformAction() or PS:IsSpectator(self) then return end
 
         for item_id, item in pairs(self.PS_Items) do
             local ITEM = PS.Items[item_id]
 
             if item.Equipped then
-                ITEM:OnEquip(self, item.Modifiers)
+                ITEM:OnSpawn(self, item.Modifiers)
             end
         end
     end)
@@ -29,7 +22,7 @@ function Player:PS_PlayerDeath()
     for item_id, item in pairs(self.PS_Items) do
         if item.Equipped then
             local ITEM = PS.Items[item_id]
-            ITEM:OnHolster(self, item.Modifiers)
+            ITEM:OnDeath(self, item.Modifiers)
         end
     end
 end
@@ -214,8 +207,7 @@ function Player:PS_BuyItem(item_id)
         end
     end
 
-    local cat_name = ITEM.Category
-    local CATEGORY = PS:FindCategoryByName(cat_name)
+    local CATEGORY = PS.Categories[ITEM.Category]
 
     if CATEGORY.AllowedUserGroups and #CATEGORY.AllowedUserGroups > 0 then
         if not table.HasValue(CATEGORY.AllowedUserGroups, self:PS_GetUsergroup()) then
@@ -340,11 +332,10 @@ function Player:PS_EquipItem(item_id)
         return false
     end
 
-    local cat_name = ITEM.Category
-    local CATEGORY = PS:FindCategoryByName(cat_name)
+    local CATEGORY = PS.Categories[ITEM.Category]
 
     if CATEGORY and CATEGORY.AllowedEquipped > -1 then
-        if self:PS_NumItemsEquippedFromCategory(cat_name) + 1 > CATEGORY.AllowedEquipped then
+        if self:PS_NumItemsEquippedFromCategory(ITEM.Category) + 1 > CATEGORY.AllowedEquipped then
             self:PS_Notify('Only ' .. CATEGORY.AllowedEquipped .. ' item' .. (CATEGORY.AllowedEquipped == 1 and '' or 's') .. ' can be equipped from this category!')
 
             return false
@@ -378,14 +369,13 @@ function Player:PS_EquipItem(item_id)
 
         for id, item in pairs(self.PS_Items) do
             if not self:PS_HasItemEquipped(id) then continue end
-            local CatName = PS.Items[id].Category
-            local Cat = PS:FindCategoryByName(CatName)
+            local Cat = PS.Categories[PS.Items[id].Category]
             if not Cat.SharedCategories then continue end
 
             for _, SharedCategory in pairs(Cat.SharedCategories) do
                 if SharedCategory == CATEGORY.Name then
                     if Cat.AllowedEquipped > -1 and CATEGORY.AllowedEquipped > -1 then
-                        if NumEquipped(self, CatName) + NumEquipped(self, CATEGORY.Name) + 1 > Cat.AllowedEquipped then
+                        if NumEquipped(self, Cat.ID) + NumEquipped(self, CATEGORY.Name) + 1 > Cat.AllowedEquipped then
                             self:PS_Notify('Only ' .. Cat.AllowedEquipped .. ' item' .. (Cat.AllowedEquipped == 1 and '' or 's') .. ' can be equipped over ' .. ConCatCats .. '!')
 
                             return false
