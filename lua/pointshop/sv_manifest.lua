@@ -13,3 +13,9 @@ AddCSLuaFile"vgui/DPointShopGivePoints.lua"
 AddCSLuaFile"vgui/DPointShopItem.lua"
 AddCSLuaFile"vgui/DPointShopMenu.lua"
 AddCSLuaFile"vgui/DPointShopPreview.lua"
+
+AddCSLuaFile"vgui_new/fdermalib.lua"
+AddCSLuaFile"vgui_new/tdlib.lua"
+AddCSLuaFile"vgui_new/circles.lua"
+
+AddCSLuaFile"vgui_new/dpointshop_menu.lua"
