@@ -7,15 +7,38 @@ function PS:GetThemeVar(element)
     return self.Config.Themes[self.ActiveTheme][element] or self.Config.Themes.default[element]
 end
 
-surface.CreateFont("PS_Header", {
-    font = "Rubik SemiBold",
-    size = 30, shadow = false, antialias = true,
-})
 
-surface.CreateFont("PS_Label", {
-    font = "Rubik SemiBold",
-    size = 20, shadow = false, antialias = true,
-})
+if file.Exists("resource/fonts/rubik-semibold.ttf", "THIRDPARTY") then
+    surface.CreateFont("PS_Label", {
+        font = "Rubik SemiBold",
+        size = 20, shadow = false, antialias = true,
+    })
+
+    surface.CreateFont("PS_Header", {
+        font = "Rubik SemiBold",
+        size = 30, shadow = false, antialias = true,
+    })
+
+    surface.CreateFont("PS_LabelLarge", {
+        font = "Rubik SemiBold",
+        size = 26, shadow = false, antialias = true,
+    })
+else
+    surface.CreateFont("PS_Label", {
+        font = "Circular Std Medium",
+        size = 20, shadow = false, antialias = true,
+    })
+
+    surface.CreateFont("PS_Header", {
+        font = "Circular Std Medium",
+        size = 30, shadow = false, antialias = true,
+    })
+
+    surface.CreateFont("PS_LabelLarge", {
+        font = "Circular Std Medium",
+        size = 26, shadow = false, antialias = true,
+    })
+end
 
 function PS:FadeFunction(panel, transition, color_string, alpha, speed, round, func)
     panel:TDLib()
@@ -161,13 +184,13 @@ function PANEL:Init()
     -- Right bar
     self.Right = self:Add("DPanel")
     self.Right:Dock(RIGHT)
-    self.Right:SetWide(246)
+    self.Right:SetWide(264)
+    self.Right:DockPadding(12, 12, 12, 12)
     self.Right.Paint = emptyfunc
 
     self.Controls = self.Right:Add("DPanel")
     self.Controls:Dock(BOTTOM)
     self.Controls:SetTall(82)
-    self.Controls:DockMargin(0, 6, 6, 6)
     self.Controls:DockPadding(6, 6, 6, 6)
     self.Controls.Paint = foreground1roundfunc
 
@@ -200,9 +223,57 @@ function PANEL:Init()
     self.Equip:SetText("Equip")
     self.Equip:SetHoverText("Holster")
 
+    -- Description and name
+    self.DataContainer = self.Right:Add("DPanel")
+    self.DataContainer:Dock(BOTTOM)
+    self.DataContainer:SetTall(82)
+    self.DataContainer:DockMargin(0, 0, 0, 12)
+    self.DataContainer:DockPadding(6, 6, 6, 6)
+    self.DataContainer.Paint = foreground1roundfunc
+
+    self.ItemDesc = self.DataContainer:Add("DPanel")
+    self.ItemDesc:Dock(BOTTOM)
+    self.ItemDesc:DockMargin(0, 6, 0, 0)
+    self.ItemDesc.Paint = emptyfunc
+
+    self.ItemTitle = self.DataContainer:Add("DLabel")
+    self.ItemTitle:Dock(BOTTOM)
+    self.ItemTitle:SetColor(COLOR_WHITE)
+    self.ItemTitle:SetFont("PS_LabelLarge")
+    self.ItemTitle:SetContentAlignment(5)
+
+    self:SetDataText("Playermodels", "Multi-line text goes here, but can it support multi line? The answer is surprisingly yes")
+    --self:SetDataText("Deez", "nuts")
     self:PopulateCategories()
 
     self.Initialized = true
+end
+
+function PANEL:SetDataText(title, desc)
+    self.ItemTitle:SetText(title)
+    self.ItemTitle:SizeToContents()
+
+    self.ItemDesc:Clear()
+
+    -- Super hack to support multiline text
+    local parsed = markup.Parse(string.format("<font=%s>%s</font>", "PS_Label", desc), 240)
+
+    for i, block in ipairs(parsed.blocks) do
+        local text = self.ItemDesc:Add("EditablePanel")
+        text:Dock(BOTTOM)
+        text:SetTall(18)
+        text:SetZPos(-i)
+        text._text = block.text
+        text:TDLib()
+            :On("Paint", function(this, w, h)
+                PS.ShadowedText(this._text, "PS_Label", w * 0.5, h * 0.5, COLOR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+            end)
+    end
+
+    self.ItemDesc:SetTall(#parsed.blocks * 18)
+
+    self:InvalidateLayout(true)
+    self.DataContainer:SetTall(self.ItemTitle:GetTall() + #parsed.blocks * 18 + 16)
 end
 
 function PANEL:PerformLayout()
