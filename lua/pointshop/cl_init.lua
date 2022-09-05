@@ -15,6 +15,7 @@ include"vgui_new/fdermalib.lua"
 include"vgui_new/tdlib.lua"
 
 include"vgui_new/dpointshop_menu.lua"
+include"vgui_new/dpointshop_elements.lua"
 
 PS.ShopMenu = nil
 PS.ClientsideModels = {}

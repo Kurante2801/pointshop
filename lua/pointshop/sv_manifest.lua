@@ -19,3 +19,4 @@ AddCSLuaFile"vgui_new/tdlib.lua"
 AddCSLuaFile"vgui_new/circles.lua"
 
 AddCSLuaFile"vgui_new/dpointshop_menu.lua"
+AddCSLuaFile"vgui_new/dpointshop_elements.lua"
