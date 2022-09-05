@@ -26,8 +26,8 @@ PS.Config.Themes = {}
 
 PS.Config.Themes["default"] = {
     MainColor = Color(50, 150, 255), -- Top bar, buttons, etc
-    BackgroundColor = Color(50, 70, 100), -- The void
-    Foreground1Color = Color(30, 50, 75), -- Scroll bars, deselected buttons, etc
+    BackgroundColor = Color(52, 73, 94), -- The void
+    Foreground1Color = Color(44, 62, 80), -- Scroll bars, deselected buttons, etc
     Foreground2Color = Color(20, 40, 60), -- Dropdowns, input fields, etc
 }
 
