@@ -25,8 +25,8 @@ local invalidplayeritems = {}
 
 -- menu stuff
 function PS:ToggleMenu()
-    if not PS.ShopMenu then
-        PS.ShopMenu = vgui.Create('DPointShopMenu')
+    if not IsValid(PS.ShopMenu) then
+        PS.ShopMenu = vgui.Create("PS_Menu")
         PS.ShopMenu:SetVisible(false)
     end
 

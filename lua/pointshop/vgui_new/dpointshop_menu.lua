@@ -1,6 +1,7 @@
 local COLOR_WHITE = Color(255, 255, 255)
 local emptyfunc = function() end
 
+PS.ActiveItem = nil
 PS.ActiveTheme = cookie.GetString("PS_Theme", "default")
 PS.Theme = table.Copy(PS.Config.Themes.default)
 
@@ -10,6 +11,35 @@ end
 
 function PS:GetThemeVar(element)
     return PS.Theme[element]
+end
+
+function PS.Mask(panel, x, y, w, h, callback)
+    render.ClearStencil()
+    render.SetStencilEnable(true)
+
+    render.SetStencilWriteMask(1)
+    render.SetStencilTestMask(1)
+
+    render.SetStencilFailOperation(STENCILOPERATION_REPLACE)
+    render.SetStencilPassOperation(STENCILOPERATION_ZERO)
+    render.SetStencilZFailOperation(STENCILOPERATION_ZERO)
+    render.SetStencilCompareFunction(STENCILCOMPARISONFUNCTION_NEVER)
+    render.SetStencilReferenceValue(1)
+
+    draw.NoTexture()
+    surface.SetDrawColor(255, 255, 255, 255)
+    surface.DrawRect(x, y, w, h)
+
+    render.SetStencilFailOperation(STENCILOPERATION_ZERO)
+    render.SetStencilPassOperation(STENCILOPERATION_REPLACE)
+    render.SetStencilZFailOperation(STENCILOPERATION_ZERO)
+    render.SetStencilCompareFunction(STENCILCOMPARISONFUNCTION_EQUAL)
+    render.SetStencilReferenceValue(1)
+
+    callback()
+
+    render.SetStencilEnable(false)
+    render.ClearStencil()
 end
 
 if file.Exists("resource/fonts/rubik-semibold.ttf", "THIRDPARTY") then
@@ -27,6 +57,11 @@ if file.Exists("resource/fonts/rubik-semibold.ttf", "THIRDPARTY") then
         font = "Rubik SemiBold",
         size = 26, shadow = false, antialias = true,
     })
+
+    surface.CreateFont("PS_LabelSmall", {
+        font = "Rubik SemiBold",
+        size = 16, shadow = false, antialias = true,
+    })
 else
     surface.CreateFont("PS_Label", {
         font = "Circular Std Medium",
@@ -41,6 +76,11 @@ else
     surface.CreateFont("PS_LabelLarge", {
         font = "Circular Std Medium",
         size = 26, shadow = false, antialias = true,
+    })
+
+    surface.CreateFont("PS_LabelSmall", {
+        font = "Circular Std Medium",
+        size = 16, shadow = false, antialias = true,
     })
 end
 
@@ -122,7 +162,7 @@ local PANEL = {}
 PANEL.BarHeight = 34
 
 function PANEL:Init()
-    self:SetSize(math.Clamp(1024, 0, ScrW()), math.Clamp(768, 0, ScrH()))
+    self:SetSize(math.Clamp(1090, 0, ScrW()), math.Clamp(768, 0, ScrH()))
     self:Center()
     self:MakePopup()
     self:SetDraggable(false)
@@ -132,6 +172,13 @@ function PANEL:Init()
     self.btnMaxim:SetVisible(false)
     self.btnMinim:SetVisible(false)
     self.btnClose.Mat = Material("lbg_pointshop/derma/close.png", "noclamp smooth")
+    self.btnClose.DoClick = function(this)
+        PS:ToggleMenu()
+    end
+    self.btnClose.DoRightClick = function(this)
+        self:Remove()
+        gui.EnableScreenClicker(false)
+    end
     self.btnClose:TDLib()
         :ClearPaint()
         :On("PaintOver", function(this, w, h)
@@ -204,8 +251,43 @@ function PANEL:Init()
     self.Buy:SetTall(32)
     self.Buy:SetText("Purchase")
     self.Buy:SetIcon("lbg_pointshop/derma/shopping_cart.png", 18, 18)
-    self.Buy:SetHoverText("-1234567890")
-    self.Buy:SetHoverIcon("lbg_pointshop/derma/sell.png", 18, 18)
+    self.Buy:SetHoverText("Purchase")
+    --self.Buy:SetHoverIcon("lbg_pointshop/derma/sell.png", 18, 18)
+    self.Buy:SetHoverIcon("lbg_pointshop/derma/shopping_cart.png", 18, 18)
+    self.Buy.SetItem = function(this, item)
+        this.Item = item
+        this.PressedOnce = false
+
+        if not item then
+            this:SetText("Purchase")
+            this:SetHoverText("Purchase")
+            this:SetEnabled(false)
+            return
+        end
+
+        local ply = LocalPlayer()
+
+        if ply:PS_HasItem(item.ID) then
+            this:SetText("Sell")
+            this:SetHoverIcon("lbg_pointshop/derma/sell.png", 18, 18)
+            this:SetHoverText("+" .. PS.Config.CalculateSellPrice(ply, item))
+            this:SetEnabled(true)
+        else
+            local price = PS.Config.CalculateBuyPrice(ply, item)
+
+            if not ply:PS_HasPoints(price) then
+                this:SetText("Cannot Affort")
+                this:SetHoverIcon("")
+                this:SetHoverText("Short by: " .. (price - ply:PS_GetPoints()))
+                this:SetEnabled(false)
+            else
+                this:SetText("Purchase")
+                this:SetHoverIcon("lbg_pointshop/derma/sell.png", 18, 18)
+                this:SetHoverText("-" .. PS.Config.CalculateBuyPrice(ply, item))
+                this:SetEnabled(true)
+            end
+        end
+    end
 
     -- Top buttons
     self.ControlsTop = self.Controls:Add("DPanel")
@@ -218,7 +300,25 @@ function PANEL:Init()
     self.Customize:Dock(LEFT)
     self.Customize:SetWide(111)
     self.Customize:SetText("Customize")
-    self.Customize:SetHoverText("Unavailable")
+    self.Customize:SetEnabled(false)
+    self.Customize.SetItem = function(this, item)
+        this.Item = item
+
+        if not item or not LocalPlayer():PS_HasItemEquipped(item.ID) then
+            this:SetEnabled(false)
+            this:SetHoverText("Customize")
+            return
+        end
+
+        if item.Modify and not item:GamemodeCheck() then
+            this:SetEnabled(true)
+            this:SetHoverText("Customize")
+        else
+            this:SetEnabled(false)
+            this:SetHoverText("Unavailable")
+        end
+
+    end
 
     -- Equip button
     self.Equip = self.ControlsTop:Add("PS_Button")
@@ -226,6 +326,8 @@ function PANEL:Init()
     self.Equip:SetWide(111)
     self.Equip:SetText("Equip")
     self.Equip:SetHoverText("Holster")
+    self.Equip.SetItem = function(this, item)
+    end
 
     -- Description and name
     self.DataContainer = self.Right:Add("DPanel")
@@ -246,9 +348,6 @@ function PANEL:Init()
     self.ItemTitle:SetFont("PS_LabelLarge")
     self.ItemTitle:SetContentAlignment(5)
 
-    self:SetDataText("Playermodels", "Multi-line text goes here, but can it support multi line? The answer is surprisingly yes")
-    --self:SetDataText("Deez", "nuts")
-
     self.ModelPanel = self.Right:Add("EditablePanel")
     self.ModelPanel:Dock(FILL)
     self.ModelPanel:DockMargin(0, 0, 0, 12)
@@ -258,7 +357,7 @@ function PANEL:Init()
     self.MDL:Dock(FILL)
 
     self.ModelHeight = self.ModelPanel:Add("PS_VerticalSlider")
-    self.ModelHeight:SetMinMax(0, 60)
+    self.ModelHeight:SetMinMax(-10, 70)
     self.ModelHeight:SetValue(30)
     self.ModelHeight:SetDefaultValue(30)
     self.ModelHeight.OnValueChanged = function(this, value)
@@ -273,12 +372,14 @@ function PANEL:Init()
         self.MDL:SetCamPos(cam)
         self.MDL:SetLookAt(at)
     end
+    self.ModelHeight.Slider.Knob.Mat = Material("lbg_pointshop/derma/unfold_more.png", "noclamp smooth")
     self.ModelHeight.Slider.Knob:TDLib()
         :ClearPaint()
         :SetupTransition("MouseHover", 6, TDLibUtil.HoverFunc)
         :On("Paint", function(this, w, h)
             draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("MainColor"))
             draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("Foreground1Color"), 125 * this.MouseHover))
+            PS.ShadowedImage(this.Mat, w * 0.5, h * 0.5, 16, 16, COLOR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
         end)
 
         :SetSize(24, 24)
@@ -289,22 +390,28 @@ function PANEL:Init()
         self.ModelHeight:ResetToDefaultValue()
         local mins, maxs = self.MDL.Entity:GetRenderBounds()
         self.MDL:SetCamPos(mins:Distance(maxs) * Vector(0.30, 0.30, 0.25) + Vector(0, 0, 15))
-        self.MDL:SetLookAt((maxs + mins) / 2)
+        self.MDL:SetLookAt((maxs + mins) / 2 + Vector(0, -4, 0))
         self.MDL.Angles = Angle(0, 0, 0)
         self.MDL.LastPress = 0
-        self.MDL:SetFOV(70  )
+        self.MDL:SetFOV(70)
         self.MDL.Entity:SetAngles(Angle(0, 0, 0))
     end
 
     self.ModelPanel.PerformLayout = function(this)
         local w, h = this:GetSize()
 
-        self.ModelHeight:SetPos(w - self.ModelHeight:GetWide(), 0)
-        self.ModelHeight:SetSize(32, h)
+        self.ModelHeight:SetPos(w - self.ModelHeight:GetWide(), 6)
+        self.ModelHeight:SetSize(32, h - 12)
 
         self.ModelReset:SetPos(6, h - 34)
         self.ModelReset:SetSize(28, 28)
     end
+
+    -- Center
+    self.Container = self:Add("EditablePanel")
+    self.Container:Dock(FILL)
+    self.Container:MoveToBack()
+    self.Container.Paint = emptyfunc
 
     self:PopulateCategories()
 
@@ -321,8 +428,6 @@ function PANEL:PerformLayout()
 
     self.Settings:SetPos(w - self.BarHeight * 2, 0)
     self.Settings:SetSize(self.BarHeight, self.BarHeight)
-
-    
 end
 
 function PANEL:Paint(w, h)
@@ -358,6 +463,8 @@ function PANEL:PopulateCategories()
     for _, button in ipairs(self.Categories or {}) do
         button:Remove()
     end
+
+    self.Container:Clear()
 
     local cats = {}
     for _, cat in pairs(PS.Categories) do
@@ -396,10 +503,14 @@ function PANEL:PopulateCategories()
                 if this.Active then return end
                 self:HidePanels()
                 this.Active = true
+
+                PS.ActiveCategory = cat
+                self:OnItemSelected(nil)
+                self:SetDataText(cat.Name or cat.ID, cat.Description or "")
+
                 if IsValid(this.CategoryPanel) then
                     this.CategoryPanel:Show()
                 end
-
             end)
             PS:FadeHover(button, "Foreground2Color", 125, 6, 6)
             PS:FadeActive(button, "MainColor", 125, 6, 6)
@@ -413,7 +524,11 @@ function PANEL:PopulateCategories()
                 PS.ShadowedImage(this.Mat, h * 0.5, h * 0.5, 16, 16, COLOR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
             end)
         end
+
+        self:MakeCategory(button, cat)
     end
+
+    self.Categories[1]:DoClick()
 end
 
 function PANEL:HidePanels()
@@ -431,6 +546,14 @@ function PANEL:SetDataText(title, desc)
 
     self.ItemDesc:Clear()
 
+    if not desc or desc == "" then
+        self.ItemDesc:Hide()
+        self:InvalidateLayout(true)
+        self.DataContainer:SetTall(self.ItemTitle:GetTall() + 12)
+        return
+    end
+
+    self.ItemDesc:Show()
     -- Super hack to support multiline text
     local parsed = markup.Parse(string.format("<font=%s>%s</font>", "PS_Label", desc), 240)
 
@@ -452,6 +575,62 @@ function PANEL:SetDataText(title, desc)
     self.DataContainer:SetTall(self.ItemTitle:GetTall() + #parsed.blocks * 18 + 16)
 end
 
+-- Category without subcategories
+function PANEL:MakeCategory(button, category)
+    button.CategoryPanel = self.Container:Add("PS_ScrollPanel")
+    button.CategoryPanel:Dock(FILL)
+    button.CategoryPanel:DockMargin(12, 12, 0, 12)
+    button.CategoryPanel:Hide()
+
+    button.Grid = button.CategoryPanel:Add("DIconLayout")
+    button.Grid:Dock(FILL)
+    button.Grid:SetSpaceX(12)
+    button.Grid:SetSpaceY(12)
+
+    for id, item in SortedPairsByMemberValue(PS.Items, "Name") do
+        if item.Category ~= category.ID and item.Category ~= category.Name then continue end
+
+        local itembutton = button.Grid:Add("PS_Item")
+        itembutton:SetData(item)
+        itembutton.OnItemSelected = function(this)
+            self:OnItemSelected(this.Item)
+        end
+    end
+end
+
+function PANEL:OnItemSelected(item)
+    local ply = LocalPlayer()
+
+    local ang = self.MDL.Entity:GetAngles()
+    self.MDL:SetModel(ply:GetModel())
+    self.MDL.Entity:SetAngles(ang)
+
+    if not item or PS.ActiveItem == item or PS.ActiveItem == item.ID then
+        PS.ActiveItem = nil
+
+        self.Buy:SetItem(nil)
+        self.Customize:SetItem(nil)
+        self.Equip:SetItem(nil)
+
+        if PS.ActiveCategory then
+            self:SetDataText(PS.ActiveCategory.Name or PS.ActiveCategory.ID, PS.ActiveCategory.Description or "")
+        end
+        return
+    end
+
+    self:SetDataText(item.Name or item.ID, item.Description or "")
+    self.Buy:SetItem(item)
+    self.Customize:SetItem(item)
+    self.Equip:SetItem(item)
+
+    PS.ActiveItem = item.ID
+
+    if item.IsPlayermodel then
+        self.MDL:SetModel(item.Model)
+        return
+    end
+end
+
 vgui.Register("PS_Menu", PANEL, "DFrame")
 
 PANEL = {}
@@ -461,8 +640,8 @@ function PANEL:Init()
     self:SetModel(LocalPlayer():GetModel())
 
     local mins, maxs = self.Entity:GetRenderBounds()
-    self:SetCamPos(mins:Distance(maxs) * Vector(0.30, 0.30, 0.25) + Vector(0, 0, 15))
-    self:SetLookAt((maxs + mins) / 2)
+    self:SetCamPos(mins:Distance(maxs) * Vector(0.30, 0.30, 0.25) + Vector(0, 8, 15))
+    self:SetLookAt((maxs + mins) / 2 + Vector(0, -4, 0))
 
     self.Angles = Angle(0, 0, 0)
     self.LastPress = 0
@@ -532,5 +711,123 @@ function PANEL:DragMouseRelease()
 end
 
 vgui.Register("PS_Preview", PANEL, "DModelPanel")
+
+PANEL = {}
+
+function PANEL:Init()
+    self:SetSize(128 + 12, 128 + 12 + 18)
+    self:DockMargin(6, 6, 6, 6)
+    self:SetText("")
+    self.FrameTime = 0
+
+    self:TDLib()
+        :SetupTransition("MouseHover", 12, function(this) return this:IsHovered() or PS.ActiveItem == this.Item.ID or PS.ActiveItem == this.Item end)
+end
+
+function PANEL:Paint(w, h)
+    draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+    draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 125 * self.MouseHover))
+    draw.RoundedBox(6, 6, 6, w - 12, w - 12, PS:GetThemeVar("BackgroundColor"))
+
+    if not self.Item then return end
+
+    if self.Mat then
+        PS.Mask(self, 6, 6, w - 12, w - 12, function()
+            surface.SetMaterial(self.Mat)
+            surface.SetDrawColor(255, 255, 255, 255)
+            -- Scrolling down
+            if self:IsHovered() then
+                self.FrameTime = self.FrameTime + 0.5
+            end
+
+            surface.DrawTexturedRect(6, 6 + self.FrameTime % 128 - 128, 128, 128)
+            surface.DrawTexturedRect(6, 6 + self.FrameTime % 128, 128, 128)
+        end)
+    end
+
+    PS.ShadowedText(self:IsHovered() and self.SetHoverText or (self.Item.Name or self.Item.ID), "PS_LabelSmall", w * 0.5, h - 4, COLOR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
+end
+
+function PANEL:OnCursorEntered()
+    local ply = LocalPlayer()
+    if ply:PS_HasItem(self.Item.ID) then
+        self.SetHoverText = "+" .. PS.Config.CalculateSellPrice(ply, self.Item)
+    else
+        self.SetHoverText = "-" .. PS.Config.CalculateBuyPrice(ply, self.Item)
+    end
+end
+
+function PANEL:SetData(item)
+    self.Item = item
+
+    if item.PanelFunction then
+        item.PanelFunction(self)
+    end
+
+    if not item.MenuPaint then
+        if item.Material then
+            self.Mat = Material(item.Material, "noclamp smooth")
+        elseif item.Model then
+            self.ModelPanel = self:Add("DModelPanel")
+            self.ModelPanel:SetModel(item.Model)
+            self.ModelPanel:SetPos(6, 6)
+            self.ModelPanel:SetSize(128, 128)
+            self.ModelPanel:SetMouseInputEnabled(false)
+
+            if item.Skin then
+                self.ModelPanel:SetSkin(item.Skin)
+            end
+
+            local PrevMins, PrevMaxs = self.ModelPanel.Entity:GetRenderBounds()
+            self.ModelPanel:SetCamPos(PrevMins:Distance(PrevMaxs) * Vector(0.5, 0.5, 0.5))
+            self.ModelPanel:SetLookAt((PrevMaxs + PrevMins) / 2)
+
+            self.ModelPanel.LayoutEntity = function(this, ent)
+                if this:GetParent():IsHovered() then
+                    ent:SetAngles(Angle(0, ent:GetAngles().y + 1, 0))
+                end
+
+                if self.Item.ModifyClientsideModel then
+                    self.Item:ModifyClientsideModel(LocalPlayer(), ent, Vector(), Angle())
+                end
+
+                ent.GetPlayerColor = function() return LocalPlayer():GetPlayerColor() end
+            end
+        end
+    end
+end
+
+function PANEL:DoClick()
+    if self.Item then
+        self:OnItemSelected(self.Item)
+    end
+end
+
+function PANEL:OnItemSelected(item) end
+
+vgui.Register("PS_Item", PANEL, "DButton")
+
+PANEL = {}
+
+function PANEL:Init()
+    self.VBar:SetWide(22)
+    self.VBar:SetHideButtons(true)
+    self.VBar:TDLib():SetupTransition("MouseHover", 6, function(this) return self:IsHovered() or this:IsHovered() or this.btnGrip:IsHovered() or this.btnGrip.Depressed end)
+    self.VBar.Paint = function(this, w, h)
+        draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+        draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("Foreground2Color"), 255 * this.MouseHover))
+    end
+
+    self.VBar.btnGrip:TDLib()
+        :SetupTransition("MouseHover", 12, TDLibUtil.HoverFunc)
+        :SetupTransition("ButtonDown", 6, function(this) return this.Depressed end)
+    self.VBar.btnGrip.Paint = function(this, w, h)
+        draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("MainColor"))
+        draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("Foreground1Color"), 200 * this.ButtonDown))
+        draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("Foreground1Color"), 125 * this.MouseHover))
+    end
+end
+
+vgui.Register("PS_ScrollPanel", PANEL, "DScrollPanel")
 
 vgui.Create("PS_Menu")

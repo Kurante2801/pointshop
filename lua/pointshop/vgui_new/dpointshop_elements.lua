@@ -13,6 +13,8 @@ end
 local PANEL = {}
 AccessorFunc(PANEL, "_color", "ThemeColor", FORCE_STRING)
 AccessorFunc(PANEL, "_hovertext", "HoverText", FORCE_STRING)
+AccessorFunc(PANEL, "_dis", "ThemeDisabledColor", FORCE_STRING)
+AccessorFunc(PANEL, "_main", "ThemeMainColor", FORCE_STRING)
 
 PANEL.AlignX = TEXT_ALIGN_CENTER
 PANEL.AlignY = TEXT_ALIGN_CENTER
@@ -27,6 +29,8 @@ function PANEL:Init()
     self:SetFont("PS_Label")
     self:SetText("Label")
     self:SetContentAlignment(5)
+    self:SetThemeMainColor("MainColor")
+    self:SetThemeDisabledColor("Foreground2Color")
     self:SetThemePressedColor("Foreground1Color")
     self:SetThemeHoverColor("Foreground1Color")
     self:DockPadding(6, 6, 6, 6)
@@ -37,7 +41,11 @@ function PANEL:Init()
 end
 
 function PANEL:Paint(w, h)
-    draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("MainColor"))
+    if self:IsEnabled() then
+        draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(self._main))
+    else
+        draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(self._dis))
+    end
     draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._down), self._downA * self.ButtonDown))
     draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._hover), self._hoverA * self.MouseHover))
 end
@@ -144,6 +152,10 @@ end
 function PANEL:SetThemeHoverColor(color_string, alpha)
     self._hover = color_string
     self._hoverA = alpha or 125
+end
+
+function PANEL:Set(color_string)
+    self._dis = color_string
 end
 
 vgui.Register("PS_Button", PANEL, "DButton")
