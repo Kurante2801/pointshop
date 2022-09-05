@@ -254,6 +254,58 @@ function PANEL:Init()
     self.ModelPanel:DockMargin(0, 0, 0, 12)
     self.ModelPanel.Paint = foreground1roundfunc
 
+    self.MDL = self.ModelPanel:Add("PS_Preview")
+    self.MDL:Dock(FILL)
+
+    self.ModelHeight = self.ModelPanel:Add("PS_VerticalSlider")
+    self.ModelHeight:SetMinMax(0, 60)
+    self.ModelHeight:SetValue(30)
+    self.ModelHeight:SetDefaultValue(30)
+    self.ModelHeight.OnValueChanged = function(this, value)
+        value = 60 - value
+
+        local cam = self.MDL:GetCamPos()
+        local at = self.MDL:GetLookAt()
+
+        cam.z = value
+        at.z = value
+
+        self.MDL:SetCamPos(cam)
+        self.MDL:SetLookAt(at)
+    end
+    self.ModelHeight.Slider.Knob:TDLib()
+        :ClearPaint()
+        :SetupTransition("MouseHover", 6, TDLibUtil.HoverFunc)
+        :On("Paint", function(this, w, h)
+            draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("MainColor"))
+            draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("Foreground1Color"), 125 * this.MouseHover))
+        end)
+
+        :SetSize(24, 24)
+
+    self.ModelReset = self.ModelPanel:Add("PS_ButtonIcon")
+    self.ModelReset:SetIcon("lbg_pointshop/derma/reset.png", 20, 20)
+    self.ModelReset.DoClick = function()
+        self.ModelHeight:ResetToDefaultValue()
+        local mins, maxs = self.MDL.Entity:GetRenderBounds()
+        self.MDL:SetCamPos(mins:Distance(maxs) * Vector(0.30, 0.30, 0.25) + Vector(0, 0, 15))
+        self.MDL:SetLookAt((maxs + mins) / 2)
+        self.MDL.Angles = Angle(0, 0, 0)
+        self.MDL.LastPress = 0
+        self.MDL:SetFOV(70  )
+        self.MDL.Entity:SetAngles(Angle(0, 0, 0))
+    end
+
+    self.ModelPanel.PerformLayout = function(this)
+        local w, h = this:GetSize()
+
+        self.ModelHeight:SetPos(w - self.ModelHeight:GetWide(), 0)
+        self.ModelHeight:SetSize(32, h)
+
+        self.ModelReset:SetPos(6, h - 34)
+        self.ModelReset:SetSize(28, 28)
+    end
+
     self:PopulateCategories()
 
     self.Initialized = true
@@ -269,6 +321,8 @@ function PANEL:PerformLayout()
 
     self.Settings:SetPos(w - self.BarHeight * 2, 0)
     self.Settings:SetSize(self.BarHeight, self.BarHeight)
+
+    
 end
 
 function PANEL:Paint(w, h)
@@ -399,4 +453,84 @@ function PANEL:SetDataText(title, desc)
 end
 
 vgui.Register("PS_Menu", PANEL, "DFrame")
+
+PANEL = {}
+
+-- TODO: Use default model or equipped model when spectating
+function PANEL:Init()
+    self:SetModel(LocalPlayer():GetModel())
+
+    local mins, maxs = self.Entity:GetRenderBounds()
+    self:SetCamPos(mins:Distance(maxs) * Vector(0.30, 0.30, 0.25) + Vector(0, 0, 15))
+    self:SetLookAt((maxs + mins) / 2)
+
+    self.Angles = Angle(0, 0, 0)
+    self.LastPress = 0
+end
+
+function PANEL:Paint(w, h)
+    if not IsValid(self.Entity) then return end
+    local x, y = self:LocalToScreen(0, 0)
+    local ang = self.aLookAngle or (self.vLookatPos - self.vCamPos):Angle()
+    self:LayoutEntity(self.Entity)
+
+    cam.Start3D(self.vCamPos, ang, self.fFOV, x, y, w, h, 5, 4096)
+    cam.IgnoreZ(true)
+    render.SuppressEngineLighting(true)
+    render.SetLightingOrigin(self.Entity:GetPos())
+    render.ResetModelLighting(self.colAmbientLight.r / 255, self.colAmbientLight.g / 255, self.colAmbientLight.b / 255)
+    render.SetColorModulation(self.colColor.r / 255, self.colColor.g / 255, self.colColor.b / 255)
+    render.SetBlend(self.colColor.a / 255)
+
+    for i = 0, 6 do
+        local col = self.DirectionalLight[i]
+
+        if (col) then
+            render.SetModelLighting(i, col.r / 255, col.g / 255, col.b / 255)
+        end
+    end
+
+    self.Entity:DrawModel()
+    render.SuppressEngineLighting(false)
+    cam.IgnoreZ(false)
+    cam.End3D()
+end
+
+function PANEL:GetPlayerColor()
+    return LocalPlayer():GetPlayerColor()
+end
+
+function PANEL:LayoutEntity(ent)
+    ent.GetPlayerColor = self.GetPlayerColor
+
+    if self.Pressed then
+        local mx = input.GetCursorPos()
+        self.Angles.y = self.Angles.y - ((self.PressX or mx) - mx)
+        self.PressX, self.PressY = input.GetCursorPos()
+
+        ent:SetAngles(self.Angles)
+    end
+end
+
+function PANEL:OnRemove()
+    SafeRemoveEntity(self.Entity)
+end
+
+function PANEL:OnMouseWheeled(delta)
+    if not IsValid(self.Entity) then return end
+
+    self:SetFOV(math.Clamp(self:GetFOV() - delta * 2, 10, 90))
+end
+
+function PANEL:DragMousePress()
+    self.PressX, self.PressY = input.GetCursorPos()
+    self.Pressed = true
+end
+
+function PANEL:DragMouseRelease()
+    self.Pressed = false
+end
+
+vgui.Register("PS_Preview", PANEL, "DModelPanel")
+
 vgui.Create("PS_Menu")

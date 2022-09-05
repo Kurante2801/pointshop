@@ -147,3 +147,140 @@ function PANEL:SetThemeHoverColor(color_string, alpha)
 end
 
 vgui.Register("PS_Button", PANEL, "DButton")
+
+PANEL = {}
+
+function PANEL:Init()
+    self:SetText("")
+
+end
+
+function PANEL:PaintOver(w, h)
+    local l, t, r, b = self:GetDockPadding()
+    local mat = self.IconMaterial
+    local mat_w, mat_h = self.IconWidth, self.IconHeight
+
+    if self:IsHovered() and self.HoverIconMaterial ~= nil and self.HoverIconMaterial ~= "" then
+        if not self.HoverIconMaterial then
+            mat = nil
+        else
+            mat = self.HoverIconMaterial
+            mat_w, mat_h = self.HoverIconWidth, self.HoverIconHeight
+        end
+    end
+
+    local x = 0
+    if self.AlignX == TEXT_ALIGN_LEFT then
+        x = l
+    elseif self.AlignX == TEXT_ALIGN_CENTER then
+        x = w * 0.5
+    elseif self.AlignX == TEXT_ALIGN_RIGHT then
+        x = w - r
+    end
+
+    local y = 0
+    if self.AlignY == TEXT_ALIGN_TOP then
+        y = t
+    elseif self.AlignY == TEXT_ALIGN_CENTER then
+        y = h * 0.5
+    elseif self.AlignY == TEXT_ALIGN_BOTTOM then
+        y = h - b
+    end
+
+    if mat ~= nil then
+        PS.ShadowedImage(mat, x, y, mat_w, mat_h, COLOR_WHITE, self.AlignX, self.AlignY)
+    end
+end
+
+vgui.Register("PS_ButtonIcon", PANEL, "PS_Button")
+
+
+-- Bro why is this not on base GMod
+PANEL = {}
+AccessorFunc(PANEL, "_min", "Min", FORCE_NUMBER)
+AccessorFunc(PANEL, "_max", "Max", FORCE_NUMBER)
+AccessorFunc(PANEL, "_def", "DefaultValue", FORCE_NUMBER)
+AccessorFunc(PANEL, "_value", "FloatValue", FORCE_NUMBER)
+AccessorFunc(PANEL, "_decimals", "Decimals", FORCE_NUMBER)
+
+function PANEL:Init()
+    self:SetMouseInputEnabled(true)
+
+    self.Slider = self:Add("DSlider")
+    self.Slider:SetLockX(0.5)
+    self.Slider:SetLockY(nil)
+    self.Slider.TranslateValues  = function(this, x, y) return self:TranslateSliderValues(x, y) end
+    self.Slider:SetTrapInside(true)
+    self.Slider:Dock(FILL)
+    self.Slider:SetWide(24)
+    self.Slider.Knob.OnMousePressed = function(this, mcode)
+        if mcode == MOUSE_MIDDLE then
+            self:ResetToRefaultValue()
+        else
+            self.Slider:OnMousePressed(mcode)
+        end
+    end
+
+    self:SetMin(0)
+    self:SetMax(1)
+    self:SetDecimals(2)
+    self:SetValue(0.5)
+end
+
+function PANEL:SetMinMax(min, max)
+    self:SetMin(min)
+    self:SetMax(max)
+end
+
+function PANEL:GetRange()
+    return self:GetMax() - self:GetMin()
+end
+
+function PANEL:ResetToDefaultValue()
+    if not self:GetDefaultValue() then return end
+    self:SetValue(self:GetDefaultValue())
+end
+
+function PANEL:SetValue(value)
+    value = math.Clamp(tonumber(value) or 0, self:GetMin(), self:GetMax())
+    if self:GetValue() == value then return end
+    self:SetFloatValue(value)
+    self:ValueChanged(value)
+end
+
+function PANEL:GetValue()
+    return self:GetFloatValue()
+end
+
+function PANEL:IsEditing()
+    return self.Slider:IsEditing()
+end
+
+function PANEL:IsHovered()
+    return self.Slider:IsHovered()
+end
+
+function PANEL:GetFraction()
+    return (self:GetFloatValue() - self:GetMin()) / self:GetRange()
+end
+
+function PANEL:ValueChanged(value)
+    value = math.Clamp(tonumber(value) or 0, self:GetMin(), self:GetMax())
+    self.Slider:SetSlideY(self:GetFraction())
+    self:OnValueChanged(value)
+end
+
+function PANEL:OnValueChanged(value) end
+
+function PANEL:TranslateSliderValues(x, y)
+    self:SetValue(self:GetMin() + (y * self:GetRange()))
+    return x, self:GetFraction()
+end
+
+function PANEL:SetEnabled(enabled)
+    self.Slider:SetEnabled(enabled)
+    FindMetaTable("Panel").SetEnabled(self, enabled)
+end
+
+
+vgui.Register("PS_VerticalSlider", PANEL, "EditablePanel")
