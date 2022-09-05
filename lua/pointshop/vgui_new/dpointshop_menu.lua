@@ -2,11 +2,15 @@ local COLOR_WHITE = Color(255, 255, 255)
 local emptyfunc = function() end
 
 PS.ActiveTheme = cookie.GetString("PS_Theme", "default")
+PS.Theme = table.Copy(PS.Config.Themes.default)
 
-function PS:GetThemeVar(element)
-    return self.Config.Themes[self.ActiveTheme][element] or self.Config.Themes.default[element]
+if PS.ActiveTheme ~= "default" and istable(PS.Config.Themes[PS.ActiveTheme]) then
+    table.Merge(PS.Theme, PS.Config.Themes[PS.ActiveTheme])
 end
 
+function PS:GetThemeVar(element)
+    return PS.Theme[element]
+end
 
 if file.Exists("resource/fonts/rubik-semibold.ttf", "THIRDPARTY") then
     surface.CreateFont("PS_Label", {
@@ -142,7 +146,7 @@ function PANEL:Init()
         :Text("")
         :On("PaintOver", function(this, w, h) PS.ShadowedImage(this.Mat, 0, 0, w, h) end)
         :On("DoClick", function(this)
-            PS.ActiveTheme = PS.ActiveTheme == "default" and "dark" or "default"
+            self:SetTheme(PS.ActiveTheme == "default" and "dark" or "default")
         end)
     PS:FadeHover(self.Settings, "Foreground1Color", 125, 6, 6)
 
@@ -244,36 +248,15 @@ function PANEL:Init()
 
     self:SetDataText("Playermodels", "Multi-line text goes here, but can it support multi line? The answer is surprisingly yes")
     --self:SetDataText("Deez", "nuts")
+
+    self.ModelPanel = self.Right:Add("EditablePanel")
+    self.ModelPanel:Dock(FILL)
+    self.ModelPanel:DockMargin(0, 0, 0, 12)
+    self.ModelPanel.Paint = foreground1roundfunc
+
     self:PopulateCategories()
 
     self.Initialized = true
-end
-
-function PANEL:SetDataText(title, desc)
-    self.ItemTitle:SetText(title)
-    self.ItemTitle:SizeToContents()
-
-    self.ItemDesc:Clear()
-
-    -- Super hack to support multiline text
-    local parsed = markup.Parse(string.format("<font=%s>%s</font>", "PS_Label", desc), 240)
-
-    for i, block in ipairs(parsed.blocks) do
-        local text = self.ItemDesc:Add("EditablePanel")
-        text:Dock(BOTTOM)
-        text:SetTall(18)
-        text:SetZPos(-i)
-        text._text = block.text
-        text:TDLib()
-            :On("Paint", function(this, w, h)
-                PS.ShadowedText(this._text, "PS_Label", w * 0.5, h * 0.5, COLOR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-            end)
-    end
-
-    self.ItemDesc:SetTall(#parsed.blocks * 18)
-
-    self:InvalidateLayout(true)
-    self.DataContainer:SetTall(self.ItemTitle:GetTall() + #parsed.blocks * 18 + 16)
 end
 
 function PANEL:PerformLayout()
@@ -296,6 +279,25 @@ function PANEL:Paint(w, h)
     draw.RoundedBox(6, 0, 0, w, self.BarHeight, main)
 
     PS.ShadowedText(PS.Config.CommunityName, "PS_Header", 6, self.BarHeight * 0.5, COLOR_WHITE, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+end
+
+local animationTime = 1.5 -- seconds
+function PANEL:Think()
+    if not self.ThemeTransitionStart or SysTime() - self.ThemeTransitionStart > animationTime then return end
+
+    local frac = math.min((SysTime() - self.ThemeTransitionStart) / animationTime, 1)
+    print(frac)
+    -- Color transition
+    for key, value in pairs(PS.Config.Themes[PS.ActiveTheme] or PS.Config.Themes.default) do
+        if IsColor(value) then
+            PS.Theme[key] = TDLibUtil.LerpColor(frac, PS.Theme[key], value)
+        end
+    end
+end
+
+function PANEL:SetTheme(theme)
+    PS.ActiveTheme = theme
+    self.ThemeTransitionStart = SysTime()
 end
 
 function PANEL:PopulateCategories()
@@ -367,6 +369,33 @@ function PANEL:HidePanels()
             button.CategoryPanel:Hide()
         end
     end
+end
+
+function PANEL:SetDataText(title, desc)
+    self.ItemTitle:SetText(title)
+    self.ItemTitle:SizeToContents()
+
+    self.ItemDesc:Clear()
+
+    -- Super hack to support multiline text
+    local parsed = markup.Parse(string.format("<font=%s>%s</font>", "PS_Label", desc), 240)
+
+    for i, block in ipairs(parsed.blocks) do
+        local text = self.ItemDesc:Add("EditablePanel")
+        text:Dock(BOTTOM)
+        text:SetTall(18)
+        text:SetZPos(-i)
+        text._text = block.text
+        text:TDLib()
+            :On("Paint", function(this, w, h)
+                PS.ShadowedText(this._text, "PS_Label", w * 0.5, h * 0.5, COLOR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+            end)
+    end
+
+    self.ItemDesc:SetTall(#parsed.blocks * 18)
+
+    self:InvalidateLayout(true)
+    self.DataContainer:SetTall(self.ItemTitle:GetTall() + #parsed.blocks * 18 + 16)
 end
 
 vgui.Register("PS_Menu", PANEL, "DFrame")
