@@ -27,11 +27,15 @@ function Player:PS_Think()
 end
 
 function Player:PS_Move(data)
-    for item_id, item in pairs(self.PS_Items) do
+    for item_id, item in pairs(self.PS_Items or {}) do
         local ITEM = PS.Items[item_id]
 
         if item.Equipped then
             ITEM:OnMove(self, item.Modifiers, data)
         end
     end
+end
+
+function Player:PS_GetModifiers(id)
+    return (self.PS_Items and self.PS_Items[id]) and self.PS_Items[id].Modifiers or {}
 end

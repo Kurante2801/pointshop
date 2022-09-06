@@ -215,6 +215,7 @@ end)
 PS.CurrentBuild = 0
 PS.LatestBuild = 0
 PS.BuildOutdated = false
+PS.Trails = PS.Trails or {}
 
 local function CompareVersions()
     if PS.CurrentBuild < PS.LatestBuild then
