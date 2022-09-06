@@ -18,7 +18,7 @@ include"vgui_new/dpointshop_menu.lua"
 include"vgui_new/dpointshop_elements.lua"
 
 PS.ShopMenu = nil
-PS.ClientsideModels = {}
+PS.ClientsideModels = PS.ClientsideModels or {}
 PS.HoverModel = nil
 PS.HoverModelClientsideModel = nil
 local invalidplayeritems = {}
@@ -161,48 +161,27 @@ hook.Add('Think', 'PS_Think', function()
     end
 end)
 
-hook.Add('PostPlayerDraw', 'PS_PostPlayerDraw', function(ply)
-    if not ply:Alive() then return end
-    if ply == LocalPlayer() and GetViewEntity():GetClass() == 'player' and (GetConVar('thirdperson') and GetConVar('thirdperson'):GetInt() == 0) then return end
-    if not PS.ClientsideModels[ply] then return end
+function PS.PlayerDraw(ply, flags, ent)
+    if not ply.PS_Items then return end
 
-    for item_id, model in pairs(PS.ClientsideModels[ply]) do
-        if not PS.Items[item_id] then
-            PS.ClientsideModel[ply][item_id] = nil
-            continue
+    for id, item in pairs(ply.PS_Items) do
+        local ITEM = PS.Items[id]
+        if ITEM and item.Equipped and ITEM.OnPlayerDraw then
+            ITEM:OnPlayerDraw(ply, flags, ent, item.Modifiers)
         end
+    end
+end
 
-        local ITEM = PS.Items[item_id]
+hook.Add("PostPlayerDraw", "PS_PlayerDraw", PS.PlayerDraw)
+hook.Add("PostDrawTranslucentRenderables", "PS_PlayerDraw", function(_, skybox)
+    if skybox then return end
+    -- Draw player items in ragdoll
+    for _, ply in ipairs(player.GetAll()) do
+        if ply:Alive() then continue end
 
-        if not ITEM.Attachment and not ITEM.Bone then
-            PS.ClientsideModel[ply][item_id] = nil
-            continue
-        end
+        local ragdoll = ply:GetRagdollEntity()
+        if not IsValid(ragdoll) then continue end
 
-        local pos = Vector()
-        local ang = Angle()
-
-        if ITEM.Attachment then
-            local attach_id = ply:LookupAttachment(ITEM.Attachment)
-            if not attach_id then return end
-            local attach = ply:GetAttachment(attach_id)
-            if not attach then return end
-            pos = attach.Pos
-            ang = attach.Ang
-        else
-            local bone_id = ply:LookupBone(ITEM.Bone)
-            if not bone_id then return end
-            pos, ang = ply:GetBonePosition(bone_id)
-        end
-
-        model, pos, ang = ITEM:ModifyClientsideModel(ply, model, pos, ang)
-        model:SetPos(pos)
-        model:SetAngles(ang)
-        model:SetRenderOrigin(pos)
-        model:SetRenderAngles(ang)
-        model:SetupBones()
-        model:DrawModel()
-        model:SetRenderOrigin()
-        model:SetRenderAngles()
+        PS.PlayerDraw(ply, 0, ragdoll)
     end
 end)

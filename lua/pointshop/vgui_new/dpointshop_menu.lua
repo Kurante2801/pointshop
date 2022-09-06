@@ -438,6 +438,7 @@ function PANEL:Init()
 
     self.MDL = self.ModelPanel:Add("PS_Preview")
     self.MDL:Dock(FILL)
+    self.MDL.Models = {}
 
     self.ModelHeight = self.ModelPanel:Add("PS_VerticalSlider")
     self.ModelHeight:SetMinMax(-10, 70)
@@ -690,6 +691,11 @@ function PANEL:OnItemSelected(item)
     self.MDL:SetModel(ply:GetModel())
     self.MDL.Entity:SetAngles(ang)
 
+    for _, mdl in ipairs(self.MDL.Models) do
+        SafeRemoveEntity(mdl)
+    end
+    self.MDL.Models = {}
+
     if not item or PS.ActiveItem == item.ID then
         PS.ActiveItem = nil
 
@@ -713,6 +719,43 @@ function PANEL:OnItemSelected(item)
     if item.IsPlayermodel then
         self.MDL:SetModel(item.Model)
         return
+    end
+
+    if not item.Props then return end
+    -- Modelos
+
+    for id, prop in pairs(item.Props) do
+        if not file.Exists(prop.model, "GAME") then continue end
+
+        local model = prop.model
+        model = ClientsideModel(model)
+        if not model then continue end
+        model:SetNoDraw(true)
+        model:DrawShadow(false)
+        model:DestroyShadow()
+        local pos
+        pos, ang = item:GetBonePosAng(self.MDL.Entity, prop.bone)
+        if not pos or not ang then continue end
+        -- Offset
+        pos = pos + ang:Forward() * prop.pos.x - ang:Right() * prop.pos.y + ang:Up() * prop.pos.z
+        ang:RotateAroundAxis(ang:Right(), prop.ang.p)
+        ang:RotateAroundAxis(ang:Up(), prop.ang.y)
+        ang:RotateAroundAxis(ang:Forward(), prop.ang.r)
+        model:SetPos(pos)
+        model:SetAngles(ang)
+        model:SetRenderOrigin(pos)
+        model:SetRenderAngles(ang)
+        model:SetupBones()
+        local matrix = Matrix()
+        matrix:SetScale(prop.scale or Vector(1, 1, 1))
+        model:EnableMatrix("RenderMultiply", matrix)
+        model:SetMaterial(prop.material or "")
+        model.alpha = prop.alpha or 1
+        local color = prop.color or Color(255, 255,255)
+        model.Color = Vector(color.r / 255, color.g / 255, color.b / 255)
+        model.prop = prop
+
+        table.insert(self.MDL.Models, model)
     end
 end
 

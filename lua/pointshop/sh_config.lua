@@ -20,6 +20,9 @@ PS.Config.SortItemsBy = "Name" -- How are items sorted? Set to 'Price' to sort b
 -- Edit below if you know what you're doing
 PS.Config.CalculateBuyPrice = function(ply, item) return item.Price end -- You can do different calculations here to return how much an item should cost to buy. -- There are a few examples below, uncomment them to use them. -- Everything half price for admins: -- if ply:IsAdmin() then return math.Round(item.Price * 0.5) end -- 25% off for the 'donators' group -- if ply:IsUserGroup('donators') then return math.Round(item.Price * 0.75) end
 PS.Config.CalculateSellPrice = function(ply, item) return math.Round(item.Price * 0.75) end -- 75% or 3/4 (rounded) of the original item price
+PS.Config.GetDefaultPlayermodel = function()
+    return "models/player/group01/male_02.mdl"
+end
 
 PS.Config.DefaultTheme = "default"
 PS.Config.Themes = {}

@@ -12,12 +12,6 @@ PS.ClientsideModels = {}
 include("sh_config.lua")
 include("sh_player_extension.lua")
 
-function PS:IsSpectator(ply)
-    if TEAM_SPECTATOR ~= nil and ply:Team() == TEAM_SPECTATOR then return true end
-    if TEAM_SPEC ~= nil and ply:Team() == TEAM_SPEC then return true end
-    if ply.Spectating then return true end
-end
-
 -- validation
 function PS:ValidateItems(items)
     if type(items) ~= "table" then return {} end
@@ -127,7 +121,7 @@ function PS:RegisterItem(item)
     local prev = PS.Items[item.ID]
     if not prev then return end
 
-    item.Category = previous.Category
+    item.Category = prev.Category
     PS:NewItem(item)
     PS:UpdateClient()
 end

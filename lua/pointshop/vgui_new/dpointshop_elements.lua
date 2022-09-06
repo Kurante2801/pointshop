@@ -333,6 +333,64 @@ function PANEL:Paint(w, h)
     end
 
     self.Entity:DrawModel()
+
+    -- Either draw models in preview or the local player
+    local should, item = false, nil, nil
+    if PS.ActiveItem then
+        item = PS.Items[PS.ActiveItem]
+        if item and (item.IsPlayermodel or item.Props) then
+            should = true
+        end
+    end
+
+    if should then
+        for _, model in pairs(self.Models) do
+            model:DrawModel()
+            local pos
+            pos, ang = item:GetBonePosAng(self.Entity, model.prop.bone)
+            if not pos or not ang then continue end
+
+            -- Offset
+            pos = pos + ang:Forward() * model.prop.pos.x - ang:Right() * model.prop.pos.y + ang:Up() * model.prop.pos.z
+            ang:RotateAroundAxis(ang:Right(), model.prop.ang.p)
+            ang:RotateAroundAxis(ang:Up(), model.prop.ang.y)
+            ang:RotateAroundAxis(ang:Forward(), model.prop.ang.r)
+
+            model, pos, ang = item:ModifyClientsideModel(LocalPlayer(), model, pos, ang)
+
+            model:SetPos(pos)
+            model:SetAngles(ang)
+            model:SetRenderOrigin(pos)
+            model:SetRenderAngles(ang)
+            model:SetupBones()
+
+            if model.prop.colorabletype == "playercolor" then
+                local color = LocalPlayer():GetPlayerColor()
+                render.SetBlend(1)
+                render.SetColorModulation(color.x, color.y, color.z)
+            elseif model.prop.colorabletype == "rainbow" then
+                local color = HSVToColor(RealTime() * (model.prop.speed or 70) % 360, 1, 1)
+                render.SetBlend(1)
+                render.SetColorModulation(color.r / 255, color.g / 255, color.b / 255)
+            else
+                render.SetBlend(model.alpha or 1)
+                render.SetColorModulation(model.Color.x, model.Color.y, model.Color.z)
+            end
+
+            model:DrawModel()
+            if model.prop.animated then
+                model:FrameAdvance((RealTime() - model.LastPaint) * (model.data.animspeed or 1))
+            end
+
+            model:SetRenderOrigin()
+            model:SetRenderAngles()
+            render.SetBlend(1)
+            render.SetColorModulation(1, 1, 1)
+        end
+    else
+        PS.PlayerDraw(LocalPlayer(), 0, self.Entity)
+    end
+
     render.SuppressEngineLighting(false)
     cam.IgnoreZ(false)
     cam.End3D()
@@ -378,8 +436,9 @@ vgui.Register("PS_Preview", PANEL, "DModelPanel")
 PANEL = {}
 
 function PANEL:Init()
-    self:SetSize(128 + 12, 128 + 12 + 18)
+    self:SetSize(140, 158)
     self:DockMargin(6, 6, 6, 6)
+    self:DockPadding(6, 6, 6, 24)
     self:SetText("")
     self.FrameTime = 0
 
@@ -394,7 +453,9 @@ function PANEL:Paint(w, h)
 
     if not self.Item then return end
 
-    if self.Mat then
+    if self.Item.OnPanelPaint then
+        self.Item:OnPanelPaint(self, w, h)
+    elseif self.Mat then
         PS.Mask(self, 6, 6, w - 12, w - 12, function()
             surface.SetMaterial(self.Mat)
             surface.SetDrawColor(255, 255, 255, 255)
@@ -422,12 +483,12 @@ end
 
 function PANEL:SetData(item)
     self.Item = item
-
-    if item.PanelFunction then
-        item.PanelFunction(self)
+    if item.OnPanelSetup then
+        item:OnPanelSetup(self)
+        return
     end
 
-    if not item.MenuPaint then
+    if not item.OnPanelPaint then
         if item.Material then
             self.Mat = Material(item.Material, "noclamp smooth")
         elseif item.Model then

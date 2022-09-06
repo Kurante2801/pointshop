@@ -56,22 +56,62 @@ function Player:PS_HasPoints(points)
 end
 
 -- clientside models
-function Player:PS_AddClientsideModel(item_id)
-    if not PS.Items[item_id] then return false end
-    local ITEM = PS.Items[item_id]
-    local mdl = ClientsideModel(ITEM.Model, RENDERGROUP_OPAQUE)
-    mdl:SetNoDraw(true)
-
-    if not PS.ClientsideModels[self] then
-        PS.ClientsideModels[self] = {}
+function Player:PS_AddClientsideModel(id)
+    local item = PS.Items[id]
+    if not item then return false end
+    PS.ClientsideModels[self] = PS.ClientsideModels[self] or {}
+    local models = PS.ClientsideModels[self]
+    -- Remove existing
+    if models[id] then
+        for _, mdl in ipairs(models[id]) do
+            SafeRemoveEntity(mdl)
+        end
     end
 
-    PS.ClientsideModels[self][item_id] = mdl
+    models[id] = {}
+    if not item.Props then return end
+
+    -- Adds models
+    for prop_id, prop in pairs(item.Props) do
+        if not file.Exists(prop.model, "GAME") then
+            print(string.format("[LBG PointShop] Model %s from %s does not exist, skipping...", prop_id, item.ID))
+            continue
+        end
+
+        local mdl = ClientsideModel(prop.model)
+        if not mdl then
+            print(string.format("[LBG PointShop] Could not create model %s from %s, skipping...", prop_id, item.ID))
+        return
+        end
+
+        mdl:SetNoDraw(true)
+        mdl:DrawShadow(false)
+        mdl:DestroyShadow()
+
+        local matrix = Matrix()
+        matrix:SetScale(prop.scale or Vector(1, 1, 1))
+        mdl:EnableMatrix("RenderMultiply", matrix)
+        mdl:SetMaterial(prop.material or "")
+        mdl.data = prop_id
+
+        local color = prop.color or Color(255, 255, 255)
+        mdl.Color = Vector(color.r / 255, color.g / 255, color.b / 255)
+
+        table.insert(models[id], mdl)
+    end
 end
 
-function Player:PS_RemoveClientsideModel(item_id)
-    if not PS.Items[item_id] then return false end
-    if not PS.ClientsideModels[self] then return false end
-    if not PS.ClientsideModels[self][item_id] then return false end
-    PS.ClientsideModels[self][item_id] = nil
+function Player:PS_RemoveClientsideModel(id)
+    local item = PS.Items[id]
+    if not item then return false end
+    PS.ClientsideModels[self] = PS.ClientsideModels[self] or {}
+    local models = PS.ClientsideModels[self]
+
+    if models[id] then
+        for _, mdl in ipairs(models[id]) do
+            SafeRemoveEntity(mdl)
+        end
+    end
+
+    models[id] = nil
 end

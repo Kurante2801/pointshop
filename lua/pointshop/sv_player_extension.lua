@@ -4,9 +4,9 @@ PS_ITEM_MODIFY = 3
 local Player = FindMetaTable('Player')
 
 function Player:PS_PlayerSpawn()
-    if not self:PS_CanPerformAction() or PS:IsSpectator(self) then return end
+    if not self:PS_CanPerformAction() or self:PS_IsSpectator() then return end
     timer.Simple(0, function()
-        if not IsValid(self) or not self:PS_CanPerformAction() or PS:IsSpectator(self) then return end
+        if not IsValid(self) or not self:PS_CanPerformAction() or self:PS_IsSpectator() then return end
 
         for item_id, item in pairs(self.PS_Items) do
             local ITEM = PS.Items[item_id]
