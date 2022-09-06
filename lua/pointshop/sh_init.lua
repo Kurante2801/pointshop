@@ -245,7 +245,6 @@ function PS:LoadItems()
     for i = 1, #cats do
         local id = cats[i]
         local filename = string.format("pointshop/items/%s/__category.lua", id)
-
         if not file.Exists(filename, "LUA") then continue end
 
         CATEGORY = {} -- To support Pointshop 1 categories
@@ -257,17 +256,17 @@ function PS:LoadItems()
         end
 
         category = table.Copy(category)
+        category.ID = id:lower()
         CATEGORY = nil
 
-        category.ID = id:lower()
-
-        table.Add(loaded, category)
+        table.insert(loaded, category.ID)
         PS:NewCategory(category)
     end
 
     -- Finally, load items
     for _, category in ipairs(loaded) do
         local items = file.Find(string.format("pointshop/items/%s/*.lua", category), "LUA")
+
         for _, id in ipairs(items) do
             if id == "__category.lua" then continue end
             local filename = string.format("pointshop/items/%s/%s", category, id)

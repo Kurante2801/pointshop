@@ -1,18 +1,21 @@
 local COLOR_WHITE = Color(255, 255, 255)
+local draw_RoundedBox = draw.RoundedBox
+local draw_RoundedBoxEx = draw.RoundedBoxEx
+
 local emptyfunc = function() end
 local activefunc = function(this) return this.Active end
 local downfunc = function(this) return this:IsDown() end
 local foreground1func = function(panel, w, h)
-    draw.RoundedBox(0, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+    draw_RoundedBox(0, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
 end
 
 local foreground1roundfunc = function(panel, w, h)
-    draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+    draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
 end
 
 local PANEL = {}
 AccessorFunc(PANEL, "_color", "ThemeColor", FORCE_STRING)
-AccessorFunc(PANEL, "_hovertext", "HoverText", FORCE_STRING)
+AccessorFunc(PANEL, "_hovertext", "HoverText")
 AccessorFunc(PANEL, "_dis", "ThemeDisabledColor", FORCE_STRING)
 AccessorFunc(PANEL, "_main", "ThemeMainColor", FORCE_STRING)
 
@@ -42,12 +45,12 @@ end
 
 function PANEL:Paint(w, h)
     if self:IsEnabled() then
-        draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(self._main))
+        draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(self._main))
     else
-        draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(self._dis))
+        draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(self._dis))
     end
-    draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._down), self._downA * self.ButtonDown))
-    draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._hover), self._hoverA * self.MouseHover))
+    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._down), self._downA * self.ButtonDown))
+    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._hover), self._hoverA * self.MouseHover))
 end
 
 function PANEL:PaintOver(w, h)
@@ -152,10 +155,6 @@ end
 function PANEL:SetThemeHoverColor(color_string, alpha)
     self._hover = color_string
     self._hoverA = alpha or 125
-end
-
-function PANEL:Set(color_string)
-    self._dis = color_string
 end
 
 vgui.Register("PS_Button", PANEL, "DButton")

@@ -1,5 +1,8 @@
 local COLOR_WHITE = Color(255, 255, 255)
 local emptyfunc = function() end
+local draw_RoundedBox = draw.RoundedBox
+local draw_RoundedBoxEx = draw.RoundedBoxEx
+
 
 PS.ActiveItem = nil
 PS.ActiveTheme = cookie.GetString("PS_Theme", "default")
@@ -88,7 +91,7 @@ function PS:FadeFunction(panel, transition, color_string, alpha, speed, round, f
     panel:TDLib()
         :SetupTransition(transition, speed, func)
         :On("Paint", function(this, w, h)
-            draw.RoundedBox(round, 0, 0, w, h, ColorAlpha(self:GetThemeVar(color_string), alpha * this[transition]))
+            draw_RoundedBox(round, 0, 0, w, h, ColorAlpha(self:GetThemeVar(color_string), alpha * this[transition]))
         end)
 
     return panel
@@ -107,16 +110,17 @@ end
 
 -- https://github.com/Arizard/deathrun/blob/master/gamemode/cl_derma.lua#L57
 local text_shadow = Color(0, 0, 0)
+local draw_SimpleText = draw.SimpleText
 PS.ShadowedText = function(text, font, x, y, color, alignx, aligny, blur)
     blur = blur or 1
     if blur ~= 0 then
         text_shadow.a = color.a * 0.25
-        draw.SimpleText(text, font, x + blur * 2, y + blur * 2, text_shadow, alignx, aligny)
+        draw_SimpleText(text, font, x + blur * 2, y + blur * 2, text_shadow, alignx, aligny)
         text_shadow.a = color.a * 0.5
-        draw.SimpleText(text, font, x + blur, y + blur, text_shadow, alignx, aligny)
+        draw_SimpleText(text, font, x + blur, y + blur, text_shadow, alignx, aligny)
     end
 
-    return draw.SimpleText(text, font, x, y, color, alignx, aligny)
+    return draw_SimpleText(text, font, x, y, color, alignx, aligny)
 end
 
 
@@ -151,11 +155,11 @@ PS.ShadowedImage = function(material, x, y, w, h, color, alignx, aligny, blur)
 end
 
 local foreground1func = function(panel, w, h)
-    draw.RoundedBox(0, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+    draw_RoundedBox(0, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
 end
 
 local foreground1roundfunc = function(panel, w, h)
-    draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+    draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
 end
 
 local PANEL = {}
@@ -251,16 +255,54 @@ function PANEL:Init()
     self.Buy:SetTall(32)
     self.Buy:SetText("Purchase")
     self.Buy:SetIcon("lbg_pointshop/derma/shopping_cart.png", 18, 18)
-    self.Buy:SetHoverText("Purchase")
-    --self.Buy:SetHoverIcon("lbg_pointshop/derma/sell.png", 18, 18)
+    self.Buy:SetHoverText(nil)
     self.Buy:SetHoverIcon("lbg_pointshop/derma/shopping_cart.png", 18, 18)
+    self.Buy.DoClick = function(this)
+        if not this.Item then return end
+        local ply = LocalPlayer()
+        -- Require a double click
+        if ply:PS_HasItem(this.Item.ID) then
+            if this.PressedOnce then
+                ply:PS_SellItem(this.Item.ID)
+            else
+                this.PressedOnce = true
+                this:SetHoverText("Click again to confirm")
+                this:SetHoverIcon("lbg_pointshop/derma/warning.png", 18, 18)
+            end
+        else
+            ply:PS_BuyItem(this.Item.ID)
+        end
+    end
+    self.Buy:TDLib()
+        :ClearPaint()
+        :On("Paint", function(this, w, h)
+            if this:IsEnabled() then
+                if this.PressedOnce then
+                    draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("ErrorColor"))
+                else
+                    draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(this._main))
+                end
+            else
+                draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(this._dis))
+            end
+
+            draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(this._down), this._downA * this.ButtonDown))
+            draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(this._hover), this._hoverA * this.MouseHover))
+        end)
+
+    self.Buy.Think = function(this)
+        if this.PressedOnce and not this:IsHovered() then
+            this:SetItem(this.Item)
+        end
+    end
     self.Buy.SetItem = function(this, item)
         this.Item = item
         this.PressedOnce = false
 
         if not item then
             this:SetText("Purchase")
-            this:SetHoverText("Purchase")
+            this:SetHoverText(nil)
+            this:SetHoverIcon(nil)
             this:SetEnabled(false)
             return
         end
@@ -325,8 +367,49 @@ function PANEL:Init()
     self.Equip:Dock(RIGHT)
     self.Equip:SetWide(111)
     self.Equip:SetText("Equip")
-    self.Equip:SetHoverText("Holster")
+    self.Equip.HasItemEquipped = function(this) return this.Item and LocalPlayer():PS_HasItemEquipped(this.Item.ID) end
+    self.Equip:TDLib()
+        :ClearPaint()
+        --:SetupTransition("HolsterItem", 6, self.Equip.HasItemEquipped)
+        :On("Paint", function(this, w, h)
+            if this:IsEnabled() then
+                if this:HasItemEquipped() then
+                    draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("SuccessColor"))
+                else
+                    draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(this._main))
+                end
+                --draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(this._main), 255 * this.HolsterItem))
+                --draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("ErrorColor"), 255 * (1 - this.HolsterItem)))
+            else
+                draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(this._dis))
+            end
+
+            draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(this._down), this._downA * this.ButtonDown))
+            draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(this._hover), this._hoverA * this.MouseHover))
+        end)
+
+        self.Equip.DoClick = function(this)
+        if not this.Item then return end
+
+        local ply = LocalPlayer()
+        if not ply:PS_HasItemEquipped(this.Item.ID) then
+            ply:PS_EquipItem(this.Item.ID)
+        else
+            ply:PS_HolsterItem(this.Item.ID)
+        end
+    end
     self.Equip.SetItem = function(this, item)
+        this.Item = item
+        local ply = LocalPlayer()
+
+        if not item or not ply:PS_HasItem(item.ID) then
+            this:SetText("Equip")
+            this:SetEnabled(false)
+            return
+        end
+
+        this:SetEnabled(true)
+        this:SetText(ply:PS_HasItemEquipped(item.ID) and "Holster" or "Equip")
     end
 
     -- Description and name
@@ -377,8 +460,8 @@ function PANEL:Init()
         :ClearPaint()
         :SetupTransition("MouseHover", 6, TDLibUtil.HoverFunc)
         :On("Paint", function(this, w, h)
-            draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("MainColor"))
-            draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("Foreground1Color"), 125 * this.MouseHover))
+            draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("MainColor"))
+            draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("Foreground1Color"), 125 * this.MouseHover))
             PS.ShadowedImage(this.Mat, w * 0.5, h * 0.5, 16, 16, COLOR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
         end)
 
@@ -434,8 +517,8 @@ function PANEL:Paint(w, h)
     local main = PS:GetThemeVar("MainColor")
     local back = PS:GetThemeVar("BackgroundColor")
 
-    draw.RoundedBoxEx(6, 0, self.BarHeight - 6, w, h - self.BarHeight + 6, back, false, false, true, true)
-    draw.RoundedBox(6, 0, 0, w, self.BarHeight, main)
+    draw_RoundedBoxEx(6, 0, self.BarHeight - 6, w, h - self.BarHeight + 6, back, false, false, true, true)
+    draw_RoundedBox(6, 0, 0, w, self.BarHeight, main)
 
     PS.ShadowedText(PS.Config.CommunityName, "PS_Header", 6, self.BarHeight * 0.5, COLOR_WHITE, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 end
@@ -501,9 +584,11 @@ function PANEL:PopulateCategories()
             end)
             :On("DoClick", function(this)
                 if this.Active then return end
+
                 self:HidePanels()
                 this.Active = true
 
+                -- Disable item buttons and set bottom right texts to be the category's text
                 PS.ActiveCategory = cat
                 self:OnItemSelected(nil)
                 self:SetDataText(cat.Name or cat.ID, cat.Description or "")
@@ -605,7 +690,7 @@ function PANEL:OnItemSelected(item)
     self.MDL:SetModel(ply:GetModel())
     self.MDL.Entity:SetAngles(ang)
 
-    if not item or PS.ActiveItem == item or PS.ActiveItem == item.ID then
+    if not item or PS.ActiveItem == item.ID then
         PS.ActiveItem = nil
 
         self.Buy:SetItem(nil)
@@ -725,9 +810,9 @@ function PANEL:Init()
 end
 
 function PANEL:Paint(w, h)
-    draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
-    draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 125 * self.MouseHover))
-    draw.RoundedBox(6, 6, 6, w - 12, w - 12, PS:GetThemeVar("BackgroundColor"))
+    draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 125 * self.MouseHover))
+    draw_RoundedBox(6, 6, 6, w - 12, w - 12, PS:GetThemeVar("BackgroundColor"))
 
     if not self.Item then return end
 
@@ -814,20 +899,23 @@ function PANEL:Init()
     self.VBar:SetHideButtons(true)
     self.VBar:TDLib():SetupTransition("MouseHover", 6, function(this) return self:IsHovered() or this:IsHovered() or this.btnGrip:IsHovered() or this.btnGrip.Depressed end)
     self.VBar.Paint = function(this, w, h)
-        draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
-        draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("Foreground2Color"), 255 * this.MouseHover))
+        draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+        draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("Foreground2Color"), 255 * this.MouseHover))
     end
 
     self.VBar.btnGrip:TDLib()
         :SetupTransition("MouseHover", 12, TDLibUtil.HoverFunc)
         :SetupTransition("ButtonDown", 6, function(this) return this.Depressed end)
     self.VBar.btnGrip.Paint = function(this, w, h)
-        draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("MainColor"))
-        draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("Foreground1Color"), 200 * this.ButtonDown))
-        draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("Foreground1Color"), 125 * this.MouseHover))
+        draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("MainColor"))
+        draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("Foreground1Color"), 200 * this.ButtonDown))
+        draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("Foreground1Color"), 125 * this.MouseHover))
     end
 end
 
 vgui.Register("PS_ScrollPanel", PANEL, "DScrollPanel")
 
-vgui.Create("PS_Menu")
+if IsValid(PS.ShopMenu) then
+    PS.ShopMenu:Remove()
+end
+PS.ShopMenu = vgui.Create("PS_Menu")

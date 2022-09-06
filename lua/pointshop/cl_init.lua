@@ -82,6 +82,15 @@ net.Receive('PS_Items', function(length)
     local ply = net.ReadEntity()
     local items = net.ReadTable()
     ply.PS_Items = PS:ValidateItems(items)
+
+    -- Update buttons
+    if IsValid(PS.ShopMenu) then
+        local item = PS.ShopMenu.Buy.Item
+
+        PS.ShopMenu.Buy:SetItem(item)
+        PS.ShopMenu.Customize:SetItem(item)
+        PS.ShopMenu.Equip:SetItem(item)
+    end
 end)
 
 net.Receive('PS_Points', function(length)
