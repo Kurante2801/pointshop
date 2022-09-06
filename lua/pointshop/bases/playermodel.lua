@@ -3,7 +3,7 @@ BASE.ID = "playermodel"
 BASE.IsPlayermodel = true
 
 function BASE:OnEquip(ply, mods)
-    if self:GamemodeCheck() or PS:IsSpectator(ply) then return end
+    if self:GamemodeCheck() or ply:PS_IsSpectator() then return end
 
     if not ply.PS_OldModel then
         local old = ply:GetModel()
@@ -17,7 +17,7 @@ function BASE:OnEquip(ply, mods)
 end
 
 function BASE:OnSpawn(ply, mods)
-    if self:GamemodeCheck() or PS:IsSpectator(ply) then return end
+    if self:GamemodeCheck() or ply:PS_IsSpectator() then return end
 
     local old = ply:GetModel()
     if old ~= "models/player.mdl" and old ~= self.Model then
@@ -28,7 +28,7 @@ function BASE:OnSpawn(ply, mods)
 end
 
 function BASE:OnHolster(ply)
-    if self:GamemodeCheck() or PS:IsSpectator(ply) then return end
+    if self:GamemodeCheck() or ply:PS_IsSpectator() then return end
 
     if ply.PS_OldModel then
         ply:SetModel(ply.PS_OldModel)
