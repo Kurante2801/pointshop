@@ -15,3 +15,23 @@ function Player:PS_IsSpectator()
     if TEAM_SPEC ~= nil and self:Team() == TEAM_SPEC then return true end
     if self.Spectating then return true end
 end
+
+function Player:PS_Think()
+    for item_id, item in pairs(self.PS_Items) do
+        local ITEM = PS.Items[item_id]
+
+        if item.Equipped then
+            ITEM:OnThink(self, item.Modifiers)
+        end
+    end
+end
+
+function Player:PS_Move(data)
+    for item_id, item in pairs(self.PS_Items) do
+        local ITEM = PS.Items[item_id]
+
+        if item.Equipped then
+            ITEM:OnMove(self, item.Modifiers, data)
+        end
+    end
+end

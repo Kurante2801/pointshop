@@ -111,26 +111,7 @@ function Player:PS_LoadData()
 end
 
 function Player:PS_CanPerformAction(itemname)
-    local allowed = true
-    local itemexcept = false
-
-    if itemname then
-        itemexcept = PS.Items[itemname].Except
-    end
-
-    if (self.IsSpec and self:IsSpec()) and not itemexcept then
-        allowed = false
-    end
-
-    if not self:Alive() and not itemexcept then
-        allowed = false
-    end
-
-    if not allowed then
-        self:PS_Notify('You\'re not allowed to do that at the moment!')
-    end
-
-    return allowed
+    return true
 end
 
 -- points

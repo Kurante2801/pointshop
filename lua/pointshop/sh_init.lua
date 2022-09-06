@@ -83,7 +83,7 @@ PS.MasterBase = {
 local emptyFunc = function() end
 local emptyFuncs = {
     "OnBuy", "OnSell", "OnEquip", "OnHolster", "OnModify",
-    "OnSpawn", "OnDeath", "OnLoadout", "Think", "Move", "Draw",
+    "OnSpawn", "OnDeath", "OnLoadout", "OnThink", "OnMove", "OnDraw",
 }
 for _, func in ipairs(emptyFuncs) do
     PS.MasterBase[func] = emptyFunc
@@ -293,4 +293,14 @@ end
 -- Hooks
 hook.Add("PostGamemodeLoaded", "PS_Initialize", function()
     PS:Initialize()
+end)
+
+hook.Add("Think", "PS_Think", function()
+    for _, ply in ipairs(player.GetAll()) do
+        ply:PS_Think()
+    end
+end)
+
+hook.Add("Move", "PS_Move", function(ply, data)
+    ply:PS_Move(data)
 end)

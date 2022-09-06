@@ -442,12 +442,24 @@ function PANEL:Init()
     self:SetText("")
     self.FrameTime = 0
 
+    self.OwnedMat = Material("lbg_pointshop/derma/sell.png")
+    self.EquippedMat = Material("lbg_pointshop/derma/checkroom.png")
+
     self:TDLib()
         :SetupTransition("MouseHover", 12, function(this) return this:IsHovered() or PS.ActiveItem == this.Item.ID or PS.ActiveItem == this.Item end)
 end
 
 function PANEL:Paint(w, h)
-    draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+    local owned = false
+    self._back = "Foreground2Color"
+
+    if self.Item then
+        owned = LocalPlayer():PS_HasItem(self.Item.ID)
+        self._back = LocalPlayer():PS_HasItemEquipped(self.Item.ID) and "SuccessColor" or (owned and "Foreground2Color" or "Foreground1Color")
+    end
+
+
+    draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(self._back))
     draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 125 * self.MouseHover))
     draw_RoundedBox(6, 6, 6, w - 12, w - 12, PS:GetThemeVar("BackgroundColor"))
 
@@ -470,6 +482,13 @@ function PANEL:Paint(w, h)
     end
 
     PS.ShadowedText(self:IsHovered() and self.SetHoverText or (self.Item.Name or self.Item.ID), "PS_LabelSmall", w * 0.5, h - 4, COLOR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
+
+    if owned then
+        PS.ShadowedImage(self.OwnedMat, 10, 10, 16, 16, COLOR_WHITE, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+        if LocalPlayer():PS_HasItemEquipped(self.Item.ID) then
+            PS.ShadowedImage(self.EquippedMat, 30, 10, 18, 18, COLOR_WHITE, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+        end
+    end
 end
 
 function PANEL:OnCursorEntered()

@@ -28,7 +28,7 @@ PS.Config.DefaultTheme = "default"
 PS.Config.Themes = {}
 
 PS.Config.Themes["default"] = {
-    MainColor = Color(50, 150, 255), -- Top bar, buttons, etc
+    MainColor = Color(0, 125, 200), -- Top bar, buttons, etc
     BackgroundColor = Color(52, 73, 94), -- The void
     Foreground1Color = Color(44, 62, 80), -- Scroll bars, deselected buttons, etc
     Foreground2Color = Color(20, 40, 60), -- Dropdowns, input fields, etc
@@ -37,10 +37,9 @@ PS.Config.Themes["default"] = {
 }
 
 PS.Config.Themes["dark"] = {
-    MainColor = Color(50, 150, 255),
     BackgroundColor = Color(25, 25, 25),
     Foreground1Color = Color(50, 50, 50), -- Scroll bars, deselected buttons, etc
-    Foreground2Color = Color(75, 75, 75), -- Dropdowns, input fields, etc
+    Foreground2Color = Color(100, 100, 100), -- Dropdowns, input fields, etc
 }
 
 PS.UserGroups = {

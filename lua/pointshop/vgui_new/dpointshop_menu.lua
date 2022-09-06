@@ -275,6 +275,8 @@ function PANEL:Init()
     end
     self.Buy:TDLib()
         :ClearPaint()
+        :SetupTransition("ButtonDown", 6, downfunc)
+        :SetupTransition("MouseHover", 6, TDLibUtil.HoverFunc)
         :On("Paint", function(this, w, h)
             if this:IsEnabled() then
                 if this.PressedOnce then
@@ -289,12 +291,12 @@ function PANEL:Init()
             draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(this._down), this._downA * this.ButtonDown))
             draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(this._hover), this._hoverA * this.MouseHover))
         end)
+        :On("Think", function(this)
+            if this.PressedOnce and not this:IsHovered() then
+                this:SetItem(this.Item)
+            end
+        end)
 
-    self.Buy.Think = function(this)
-        if this.PressedOnce and not this:IsHovered() then
-            this:SetItem(this.Item)
-        end
-    end
     self.Buy.SetItem = function(this, item)
         this.Item = item
         this.PressedOnce = false
@@ -599,7 +601,7 @@ function PANEL:PopulateCategories()
                 end
             end)
             PS:FadeHover(button, "Foreground2Color", 125, 6, 6)
-            PS:FadeActive(button, "MainColor", 125, 6, 6)
+            PS:FadeActive(button, "MainColor", 255, 6, 6)
 
         if cat.Material then
             button:On("PaintOver", function(this, w, h)
