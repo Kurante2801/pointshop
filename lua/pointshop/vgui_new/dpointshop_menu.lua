@@ -691,6 +691,33 @@ function PANEL:PopulateCategories()
         end
     end
 
+    self.AdminButton = self.Left:Add("DButton")
+    self.AdminButton:Dock(BOTTOM)
+    self.AdminButton:SetZPos(i)
+    self.AdminButton:SetTall(46)
+    self.AdminButton.Mat = Material("lbg_pointshop/derma/admin_panel_settings.png", "noclamp smooth")
+    self.AdminButton.Panel = self.Container:Add("DPanel")
+    self.AdminButton.Panel:Dock(FILL)
+    self.AdminButton.Panel:DockMargin(12, 12, 0, 12)
+    self.AdminButton.Panel:Hide()
+
+    self.AdminButton:TDLib()
+        :ClearPaint()
+        :Text("")
+        :On("PaintOver", function(this, w, h)
+            PS.ShadowedText("Admin Panel", "PS_Label", h, h * 0.5, COLOR_WHITE, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+            PS.ShadowedImage(this.Mat, 0, 0, h, h)
+        end)
+        :On("DoClick", function(this)
+            if this.Active then return end
+
+            self:HidePanels()
+            this.Active = true
+            self.AdminButton.Panel:Show()
+        end)
+        PS:FadeHover(self.AdminButton, "Foreground2Color", 125, 6, 6)
+        PS:FadeActive(self.AdminButton, "MainColor", 255, 6, 6)
+
     self.Categories[1]:DoClick()
 end
 
@@ -703,6 +730,9 @@ function PANEL:HidePanels()
     end
     self.CustomizePanel:Clear()
     self.CustomizePanel:Hide()
+
+    self.AdminButton.Active = false
+    self.AdminButton.Panel:Hide()
 end
 
 function PANEL:SetDataText(title, desc)
