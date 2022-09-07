@@ -287,7 +287,44 @@ function PS:LoadItems()
 end
 
 function PS:UpdateClient()
-    -- For now does nothing
+    for id, item in pairs(PS.Items) do
+        if item.WebMaterial then
+            local path = string.format("lbg_pointshop_webmaterials/%s.png", id)
+            item.Material = "data/" .. path
+
+            if CLIENT then
+                http.Fetch(item.WebMaterial, function(data)
+                    file.Write(path, data)
+                end)
+            end
+        end
+    end
+
+    for id, category in pairs(PS.Categories) do
+        if category.WebMaterial then
+            local path = string.format("lbg_pointshop_webmaterials/category_%s.png", id)
+            category.Material = "data/" .. path
+
+            if CLIENT then
+                http.Fetch(category.WebMaterial, function(data)
+                    file.Write(path, data)
+                end)
+            end
+        end
+    end
+
+    if not CLIENT then return end
+
+    for ply, items in pairs(PS.ClientsideModels) do
+        for id, _ in pairs(items) do
+            ply:PS_AddClientsideModel(id)
+        end
+    end
+
+    -- Download materials
+    if not file.Exists("lbg_pointshop_webmaterials", "DATA") then
+        file.CreateDir("lbg_pointshop_webmaterials")
+    end
 end
 
 -- Hooks

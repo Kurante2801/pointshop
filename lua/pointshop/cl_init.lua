@@ -185,3 +185,7 @@ hook.Add("PostDrawTranslucentRenderables", "PS_PlayerDraw", function(_, skybox)
         PS.PlayerDraw(ply, 0, ragdoll)
     end
 end)
+
+hook.Add("ShutDown", "PS_WebMaterialsCleanup", function()
+--    for _, 
+end)

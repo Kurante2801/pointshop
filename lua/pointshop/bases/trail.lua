@@ -57,11 +57,11 @@ function BASE:OnModify(ply, mods)
     if not PS.Trails[ply] or not PS.Trails[ply][self.ID] then return end
 end
 
-function BASE:Think(ply, mods)
+function BASE:OnThink(ply, mods)
     if self:GamemodeCheck() then return end
     if CLIENT or not PS.Trails[ply] or not PS.Trails[ply][self.ID] then return end
 
-    if PS:IsSpectator(ply) then
+    if ply:PS_IsSpectator() then
         self:OnHolster(ply, mods)
     end
 end

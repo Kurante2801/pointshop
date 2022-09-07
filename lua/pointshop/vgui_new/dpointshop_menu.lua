@@ -493,6 +493,22 @@ function PANEL:Init()
         self.ModelReset:SetSize(28, 28)
     end
 
+    self.PlayerInfo = self.Right:Add("DPanel")
+    self.PlayerInfo:Dock(TOP)
+    self.PlayerInfo:SetTall(64)
+    self.PlayerInfo:DockMargin(0, 0, 0, 12)
+    self.PlayerInfo.Mat = Material("lbg_pointshop/derma/attach_money.png", "noclamp smooth")
+    self.PlayerInfo.Paint = function(this, w, h)
+        draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+        PS.ShadowedText(LocalPlayer():Name(), "PS_Label", w * 0.5 + 32, 17, COLOR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        PS.ShadowedText("$  " .. LocalPlayer():PS_GetPoints(), "PS_Label", w * 0.5 + 32, h - 16, COLOR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    end
+
+    self.Avatar = self.PlayerInfo:Add("AvatarImage")
+    self.Avatar:SetSize(64, 64)
+    self.Avatar:SetPlayer(LocalPlayer(), 64)
+
+
     -- Center
     self.Container = self:Add("EditablePanel")
     self.Container:Dock(FILL)
@@ -557,10 +573,10 @@ function PANEL:PopulateCategories()
         table.insert(cats, cat)
     end
     table.sort(cats, function(a, b)
-        a.Index = a.Index or 0
-        b.Index = b.Index or 0
+        a.Order = a.Order or 0
+        b.Order = b.Order or 0
 
-        return a.Index < b.Index
+        return a.Order < b.Order
     end)
 
     self.Categories = {}
