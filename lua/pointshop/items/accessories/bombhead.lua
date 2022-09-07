@@ -5,6 +5,7 @@ ITEM.Base = "model"
 
 ITEM.Name = "Bomb Head"
 ITEM.Price = 100
+ITEM.Subcategory = "admin"
 
 ITEM.CameraData = {
     pos = Vector(50, 50, 70),

@@ -635,7 +635,11 @@ function PANEL:PopulateCategories()
             end)
         end
 
-        self:MakeCategory(button, cat)
+        if cat.Subcategories then
+            self:MakeSubcategories(button, cat)
+        else
+            self:MakeCategory(button, cat)
+        end
     end
 
     self.Categories[1]:DoClick()
@@ -665,7 +669,7 @@ function PANEL:SetDataText(title, desc)
 
     self.ItemDesc:Show()
     -- Super hack to support multiline text
-    local parsed = markup.Parse(string.format("<font=%s>%s</font>", "PS_Label", desc), 240)
+    local parsed = markup.Parse(string.format("<font=%s>%s</font>", "PS_Label", desc), 230)
 
     for i, block in ipairs(parsed.blocks) do
         local text = self.ItemDesc:Add("EditablePanel")
@@ -701,6 +705,86 @@ function PANEL:MakeCategory(button, category)
         if item.Category ~= category.ID and item.Category ~= category.Name then continue end
 
         local itembutton = button.Grid:Add("PS_Item")
+        itembutton:SetData(item)
+        itembutton.OnItemSelected = function(this)
+            self:OnItemSelected(this.Item)
+        end
+    end
+end
+
+-- Category with subcategories
+function PANEL:MakeSubcategories(button, category)
+    button.CategoryPanel = self.Container:Add("PS_ScrollPanel")
+    button.CategoryPanel:Dock(FILL)
+    button.CategoryPanel:DockMargin(12, 12, 0, 12)
+    button.CategoryPanel:Hide()
+
+    button.SubcategoryGrids = {}
+
+    for id, subcategory in SortedPairsByMemberValue(category.Subcategories, "Order") do
+        local panel = button.CategoryPanel
+        local tall = 32
+
+        local header = panel:Add("DPanel")
+        header:Dock(TOP)
+        header:InvalidateLayout(true)
+        header:DockMargin(0, 0, 0, 6)
+        header:DockPadding(0, tall, 0, 0)
+        header:SetZPos(subcategory.Order * 2)
+        header.Text = subcategory.Name
+        header.Paint = function(this, w, h)
+            draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+            PS.ShadowedText(this.Text, "PS_LabelLarge", w * 0.5, 17, COLOR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        end
+
+        local wide = self:GetWide() - 186 - self.Right:GetWide() - 24
+       -- Super hack to support multiline text
+        local parsed = markup.Parse(string.format("<font=%s>%s</font>", "PS_Label", subcategory.Description or ""), wide)
+
+        for i, block in ipairs(parsed.blocks) do
+            local text = header:Add("EditablePanel")
+            text:Dock(TOP)
+            text:SetTall(18)
+            text:SetZPos(i)
+            text._text = block.text
+            text:TDLib()
+                :On("Paint", function(this, w, h)
+                    PS.ShadowedText(this._text, "PS_Label", w * 0.5, h * 0.5, COLOR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+                end)
+        end
+
+        tall = tall + #parsed.blocks * 18 + 4
+        header:SetTall(tall)
+        tall = tall + 6
+
+        local grid = panel:Add("DIconLayout")
+        grid:Dock(TOP)
+        grid:DockMargin(0, 0, 0, 12)
+        grid:SetSpaceX(6)
+        grid:SetSpaceY(6)
+        grid:SetZPos(subcategory.Order * 2 + 1)
+
+        button.SubcategoryGrids[id] = grid
+    end
+
+    local default
+    for id, subcat in pairs(category.Subcategories) do
+        if subcat.Default then
+            default = id
+            break
+        end
+    end
+
+    -- Add items
+    for id, item in pairs(PS.Items) do
+        if item.Category ~= category.ID then continue end
+
+        if not button.SubcategoryGrids[item.Subcategory] then
+            if not default then continue end
+            item.Subcategory = default
+        end
+
+        local itembutton = button.SubcategoryGrids[item.Subcategory]:Add("PS_Item")
         itembutton:SetData(item)
         itembutton.OnItemSelected = function(this)
             self:OnItemSelected(this.Item)
