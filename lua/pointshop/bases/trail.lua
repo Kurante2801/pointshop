@@ -37,7 +37,7 @@ function BASE:OnEquip(ply, mods)
 end
 
 function BASE:OnSpawn(ply, mods)
-    if PS:IsSpectator(ply) then return end
+    if ply:PS_IsSpectator() then return end
     self:OnEquip(ply, mods)
 end
 

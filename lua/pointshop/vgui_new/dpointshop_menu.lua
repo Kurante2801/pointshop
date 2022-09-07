@@ -508,6 +508,12 @@ function PANEL:Init()
     self.Avatar:SetSize(64, 64)
     self.Avatar:SetPlayer(LocalPlayer(), 64)
 
+    self.AvatarFrame = self.PlayerInfo:Add("PS_AvatarFrame")
+    self.AvatarFrame:SetPos(0, 0)
+    self.AvatarFrame:SetSize(64, 64)
+    self.AvatarFrame:AutoLayout()
+    self.AvatarFrame:SetPlayer(LocalPlayer())
+    self.AvatarFrame:NoClipping(true)
 
     -- Center
     self.Container = self:Add("EditablePanel")

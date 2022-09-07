@@ -4,7 +4,7 @@ BASE.Material = "pointshop/masks/gman_alyx.png"
 BASE.Scale = 1
 
 function BASE:OnPanelSetup(panel)
-   panel.MaskMat = Material(self.Material, "noclamp smooth") 
+   panel.MaskMat = Material(self.Material, "noclamp smooth")
 end
 
 function BASE:OnPanelPaint(panel, w, h)
@@ -12,7 +12,6 @@ function BASE:OnPanelPaint(panel, w, h)
     surface.SetMaterial(panel.MaskMat)
     surface.DrawTexturedRect(6, 6, 128, 128)
 end
-
 
 local materials = {}
 function BASE:OnPlayerDraw(ply)
