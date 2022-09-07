@@ -361,7 +361,55 @@ function PANEL:Init()
             this:SetEnabled(false)
             this:SetHoverText("Unavailable")
         end
+    end
+    self.Customize.DoClick = function(this)
+        if not this.Item then return end
 
+        if isfunction(this.Item.Modify) then
+            this.Item:Modify(this.Item, LocalPlayer():PS_GetModifiers(this.ID))
+            return
+        end
+
+        self:HidePanels()
+        self.CustomizePanel:Clear()
+        self.CustomizePanel:SetupTopBar(this.Item)
+        self.CustomizePanel:Show()
+        this.Item:OnCustomizeSetup(self.CustomizePanel, LocalPlayer():PS_GetModifiers(this.Item.ID))
+        self:OnItemSelected(PS.ActiveItem)
+    end
+
+    self.CustomizePanel = self:Add("EditablePanel")
+    self.CustomizePanel:Dock(FILL)
+    self.CustomizePanel:DockMargin(6, 12, 0, 12)
+    self.CustomizePanel:Hide()
+    self.CustomizePanel.SetupTopBar = function(this, item)
+        local container = this:Add("EditablePanel")
+        container:Dock(TOP)
+        container:SetTall(32)
+        container:DockMargin(0, 0, 0, 6)
+
+        local button = container:Add("PS_Button")
+        button:Dock(LEFT)
+        button:SetWide(120)
+        button:SetText("Return")
+        button:SetIcon("lbg_pointshop/derma/arrow_back.png", 20, 20)
+        button.Item = item
+        button.DoClick = function(_this)
+            for _, _button in ipairs(self.Categories) do
+                if _button.Category.ID == _this.Item.Category then
+                    _button:DoClick()
+                    self:OnItemSelected(_this.Item)
+                end
+            end
+        end
+
+        local header = container:Add("PS_Button")
+        header:Dock(FILL)
+        header:DockMargin(6, 0, 0, 0)
+        header:SetText("Customizing " .. item.Name or item.ID)
+        header:SetEnabled(false)
+        header:SetThemeDisabledColor("Foreground1Color")
+        header:SetMouseInputEnabled(false)
     end
 
     -- Equip button
@@ -591,6 +639,7 @@ function PANEL:PopulateCategories()
         local button = self.CategoriesContainer:Add("DButton")
         table.insert(self.Categories, button)
 
+        button.Category = cat
         button:Dock(TOP)
         button:SetZPos(i)
         button:SetTall(46)
@@ -652,6 +701,8 @@ function PANEL:HidePanels()
             button.CategoryPanel:Hide()
         end
     end
+    self.CustomizePanel:Clear()
+    self.CustomizePanel:Hide()
 end
 
 function PANEL:SetDataText(title, desc)
@@ -793,6 +844,10 @@ function PANEL:MakeSubcategories(button, category)
 end
 
 function PANEL:OnItemSelected(item)
+    if isstring(item) then
+        item = PS.Items[item]
+    end
+
     local ply = LocalPlayer()
 
     local ang = self.MDL.Entity:GetAngles()

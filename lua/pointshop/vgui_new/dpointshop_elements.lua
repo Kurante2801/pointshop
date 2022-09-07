@@ -160,6 +160,78 @@ end
 vgui.Register("PS_Button", PANEL, "DButton")
 
 PANEL = {}
+AccessorFunc(PANEL, "._text", "Text", FORCE_STRING)
+AccessorFunc(PANEL, "._font", "Font", FORCE_STRING)
+PANEL.AlignX = TEXT_ALIGN_CENTER
+PANEL.AlignY = TEXT_ALIGN_CENTER
+
+function PANEL:Init()
+    self:SetText("Label")
+    self:SetFont("PS_Label")
+    self:SetContentAlignment(5)
+    self:DockPadding(6, 6, 6, 6)
+end
+
+function PANEL:PaintOver(w, h)
+    local l, t, r, b = self:GetDockPadding()
+
+    local mat = self.IconMaterial
+    local mat_w, mat_h = self.IconWidth, self.IconHeight
+
+    local x = 0
+    if self.AlignX == TEXT_ALIGN_LEFT then
+        x = l
+    elseif self.AlignX == TEXT_ALIGN_CENTER then
+        x = w * 0.5
+    elseif self.AlignX == TEXT_ALIGN_RIGHT then
+        x = w - r
+    end
+
+    local y = 0
+    if self.AlignY == TEXT_ALIGN_TOP then
+        y = t
+    elseif self.AlignY == TEXT_ALIGN_CENTER then
+        y = h * 0.5
+    elseif self.AlignY == TEXT_ALIGN_BOTTOM then
+        y = h - b
+    end
+
+    if mat ~= nil then
+        if self.AlignX == TEXT_ALIGN_LEFT then
+            x = x + mat_w + 18
+        elseif self.AlignX == TEXT_ALIGN_CENTER then
+            x = x + mat_w * 0.5 + 3
+        end
+    end
+
+    w = PS.ShadowedText(self:GetText(), self:GetFont(), x, y, COLOR_WHITE, self.AlignX, self.AlignY)
+
+    if mat ~= nil then
+        if self.AlignX == TEXT_ALIGN_CENTER then
+            w = w * 0.5
+        elseif self.AlignX == TEXT_ALIGN_LEFT then
+            w = 0
+        end
+
+        PS.ShadowedImage(mat, x - mat_w - w, y, mat_w, mat_h, COLOR_WHITE, TEXT_ALIGN_CENTER, self.AlignY)
+    end
+end
+
+function PANEL:SetContentAlignmentOverride(align)
+    self.AlignX = alignsX[align]
+    self.AlignY = alignsY[align]
+end
+
+function PANEL:SetIcon(path, w, h)
+    self.IconWidth = w
+    self.IconHeight = h
+
+    self.IconMaterial = Material(path, "noclamp smooth")
+end
+
+vgui.Register("PS_Label", PANEL, "EditablePanel")
+
+PANEL = {}
 
 function PANEL:Init()
     self:SetText("")
@@ -572,3 +644,85 @@ function PANEL:Init()
 end
 
 vgui.Register("PS_ScrollPanel", PANEL, "DScrollPanel")
+
+PANEL = {}
+AccessorFunc(PANEL, "_snap", "Snap", FORCE_NUMBER)
+
+function PANEL:Init()
+    self:SetSnap(0.5)
+
+    self.Label:Remove()
+    self.Label = self:Add("PS_Label")
+    self.Label:Dock(LEFT)
+    self.Label:DockMargin(0, 0, 6, 0)
+    self.Label:SetMouseInputEnabled(true)
+    self.Label:DockPadding(0, 0, 0, 0)
+    self.Label:TDLib():SetupTransition("ScratchHover", 6, function() return self.Scratch:IsHovered() end)
+    self.Label.Paint = function(this, w, h)
+        draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+        draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 255 * this.ScratchHover))
+    end
+
+    self.Scratch = self.Label:Add("DNumberScratch")
+    self.Scratch:SetImageVisible(false)
+    self.Scratch:Dock(FILL)
+    self.Scratch:Hide()
+    self.Scratch:SetValue(self:GetValue())
+    self.Scratch.OnValueChanged = function() self:ValueChanged(self.Scratch:GetFloatValue()) end
+    self.Wang = self.Scratch
+
+    self.TextArea:SetTextColor(COLOR_WHITE)
+    self.TextArea:SetCursorColor(COLOR_WHITE)
+    self.TextArea:DockMargin(6, 0, 0, 0)
+
+    self.TextArea:SetFont("PS_Label")
+    self.TextArea:SetWide(80)
+    self.TextArea:SetContentAlignment(5)
+    self.TextArea.Paint = function(this, w, h)
+        draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+        derma.SkinHook("Paint", "TextEntry", this, w, h)
+    end
+
+    self.Slider.Paint = function(this, w, h)
+        draw_RoundedBox(3, 10, h * 0.5 - 3, w - 20, 6, PS:GetThemeVar("Foreground1Color"))
+        draw_RoundedBox(3, 10, h * 0.5 - 3, (w - 20) * self.Scratch:GetFraction(), 6, PS:GetThemeVar(this._fill))
+    end
+
+    self.Slider.Knob:SetSize(18, 18)
+    self.Slider.Knob.Mat = Material("lbg_pointshop/derma/slider_knob.png", "noclamp smooth")
+    self.Slider.Knob.Paint = function(this, w, h)
+        PS.ShadowedImage(this.Mat, 0, 0, w, h, PS:GetThemeVar(this._color))
+    end
+
+    self:SetFillThemeColor("MainColor")
+    self:SetMinMax(0, 5)
+    self:SetValue(2.5)
+end
+
+function PANEL:ApplySchemeSettings()
+end
+
+function PANEL:ValueChanged(value)
+    local desired = tonumber(value)
+    desired = math.Round(self:GetSnap() * math.Round(desired / self:GetSnap()), self:GetDecimals())
+    desired = math.Clamp(desired, self:GetMin(), self:GetMax())
+
+    if desired ~= value then
+        self:SetValue(desired)
+        return
+    end
+
+    if self.TextArea ~= vgui.GetKeyboardFocus() then
+        self.TextArea:SetValue(self.Scratch:GetTextValue())
+    end
+
+    self.Slider:SetSlideX(self.Scratch:GetFraction(desired))
+    self:OnValueChanged(desired)
+end
+
+function PANEL:SetFillThemeColor(color_string)
+    self.Slider._fill = color_string
+    self.Slider.Knob._color = color_string
+end
+
+vgui.Register("PS_HorizontalSlider", PANEL, "DNumSlider")

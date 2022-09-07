@@ -1,6 +1,11 @@
 local BASE = {}
 BASE.ID = "model"
 
+BASE.Modify = true
+
+BASE.PositionMinMax = { -10, 10 }
+BASE.ScaleMinMax = { 0.1, 1.75 }
+
 BASE.Props = {
     ["bomb"] = {
         model = "models/Combine_Helicopter/helicopter_bomb01.mdl",
@@ -145,6 +150,108 @@ if CLIENT then
     surface_DrawTexturedRect = surface.DrawTexturedRect
 end
 
+function BASE:OnCustomizeSetup(panel, mods)
+    PrintTable(mods)
+    mods.pos = mods.pos or Vector()
+    mods.ang = mods.ang or Angle()
+    mods.scale = mods.scale or 1
+
+    local thinker = panel:Add("EditablePanel")
+    thinker:SetMouseInputEnabled(false)
+    thinker.Mods = {
+        pos = Vector(mods.pos), ang = Angle(mods.ang), scale = mods.scale
+    }
+    thinker.LastSent = CurTime()
+    thinker.Think = function(this)
+        if CurTime() - this.LastSent < 0.5 then return end
+
+        if this.Mods.pos ~= mods.pos or this.Mods.ang ~= mods.ang or this.Mods.scale ~= mods.scale then
+            this.LastSent = CurTime()
+
+            this.Mods = {
+                pos = Vector(mods.pos.x, mods.pos.y, mods.pos.z),
+                ang = Angle(mods.ang.x, mods.ang.y, mods.ang.z),
+                scale = mods.scale,
+            }
+
+            net.Start("PS_ModifyItem")
+            net.WriteString(self.ID)
+            net.WriteString(util.TableToJSON(mods))
+            net.SendToServer()
+        end
+    end
+
+
+    self:AddSlider(panel, "Position X", mods.pos.x, self.PositionMinMax[1], self.PositionMinMax[2], 0.5, function(value)
+        mods.pos.x = value
+    end)
+    self:AddSlider(panel, "Position Y", mods.pos.y, self.PositionMinMax[1], self.PositionMinMax[2], 0.5, function(value)
+        mods.pos.y = value
+    end)
+    self:AddSlider(panel, "Position Z", mods.pos.z, self.PositionMinMax[1], self.PositionMinMax[2], 0.5, function(value)
+        mods.pos.z = value
+    end):DockMargin(0, 0, 0, 32)
+    self:AddSlider(panel, "Angle P", mods.ang.p, -180, 180, 0.5, function(value)
+        mods.ang.x = value
+    end)
+    self:AddSlider(panel, "Angle Y", mods.ang.y, -180, 180, 0.5, function(value)
+        mods.ang.y = value
+    end)
+    self:AddSlider(panel, "Angle R", mods.ang.r, -180, 180, 0.5, function(value)
+        mods.ang.z = value
+    end):DockMargin(0, 0, 0, 32)
+
+    self:AddSlider(panel, "Scale", mods.scale, self.ScaleMinMax[1], self.ScaleMinMax[2], 0.05, function(value)
+        mods.scale = value
+    end):SetDefaultValue(1)
+end
+
+function BASE:AddSlider(panel, text, value, min, max, snap, callback)
+    local slider = panel:Add("PS_HorizontalSlider")
+    slider.TextArea:SetWide(80)
+    slider:Dock(TOP)
+    slider:DockMargin(0, 0, 0, 6)
+    slider:SetText(text)
+    slider:SetSnap(snap)
+    slider:SetMinMax(min, max)
+    slider:SetValue(value)
+    slider:SetDefaultValue(0)
+    slider.OnValueChanged = function(this, _value)
+        callback(_value)
+    end
+
+    local button = slider:Add("PS_ButtonIcon")
+    button:Dock(LEFT)
+    button:DockMargin(0, 0, 6, 0)
+    button:SetWide(32)
+    button:SetIcon("lbg_pointshop/derma/reset.png", 20, 20)
+    button.DoClick = function()
+        slider:SetValue(slider:GetDefaultValue())
+    end
+
+    return slider
+end
+
+function BASE:SanitizeTable(mods)
+    if not isvector(mods.pos) then
+        mods.pos = Vector(0, 0, 0)
+    end
+
+    if not isangle(mods.ang) then
+        mods.ang = Angle(0, 0, 0)
+    end
+
+    if not isnumber(mods.scale) then
+        mods.scale = 1
+    end
+
+    return {
+        pos = Vector(math.Clamp(mods.pos.x, self.PositionMinMax[1], self.PositionMinMax[2]), math.Clamp(mods.pos.y, self.PositionMinMax[1], self.PositionMinMax[2]), math.Clamp(mods.pos.z, self.PositionMinMax[1], self.PositionMinMax[2])),
+        ang = Angle(math.Clamp(mods.ang.p, -180, 180), math.Clamp(mods.ang.y, -180, 180), math.Clamp(mods.ang.r, -180, 180)),
+        scale = math.Clamp(mods.scale, self.ScaleMinMax[1], self.ScaleMinMax[2])
+    }
+end
+
 function BASE:OnPanelPaint(panel)
     if panel.PanelMaterial then
         surface_SetDrawColor(255, 255, 255, 255)
@@ -207,6 +314,18 @@ function BASE:OnPlayerDraw(ply, flags, ent, mods)
 end
 
 function BASE:ModifyClientsideModel(ply, model, pos, ang)
+    local mods = ply:PS_GetModifiers(self.ID)
+    mods.pos = mods.pos or Vector()
+    mods.ang = mods.ang or Angle()
+    mods.scale = mods.scale or 1
+
+    -- Offset
+    pos = pos + ang:Forward() * mods.pos.x - ang:Right() * mods.pos.y + ang:Up() * mods.pos.z
+    ang:RotateAroundAxis(ang:Right(), mods.ang.p)
+    ang:RotateAroundAxis(ang:Up(), mods.ang.y)
+    ang:RotateAroundAxis(ang:Forward(), mods.ang.r)
+    model:SetModelScale(mods.scale)
+
     return model, pos, ang
 end
 
