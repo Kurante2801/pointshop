@@ -25,7 +25,7 @@ net.Receive('PS_HolsterItem', function(length, ply)
 end)
 
 net.Receive('PS_ModifyItem', function(length, ply)
-    ply:PS_ModifyItem(net.ReadString(), net.ReadTable())
+    ply:PS_ModifyItem(net.ReadString(), PS.ReadTable())
 end)
 
 -- player to player
@@ -147,8 +147,15 @@ hook.Add('PlayerDeath', 'PS_PlayerDeath', function(ply)
     ply:PS_PlayerDeath()
 end)
 
-hook.Add('PlayerInitialSpawn', 'PS_PlayerInitialSpawn', function(ply)
-    ply:PS_PlayerInitialSpawn()
+hook.Add("PlayerInitialSpawn", "PS_PlayerInitialSpawn", function(ply)
+    hook.Add("SetupMove", ply, function(this, ply, _, cmd)
+        ply:PS_PlayerInitialSpawn()
+        if this == ply and not cmd:IsForced() then
+            hook.Remove("SetupMove", this)
+            ply:PS_NetReady()
+            ply:PS_PlayerSpawn()
+        end
+    end)
 end)
 
 hook.Add('PlayerDisconnected', 'PS_PlayerDisconnected', function(ply)

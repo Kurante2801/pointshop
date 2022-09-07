@@ -69,7 +69,7 @@ end
 function PS:SendModifications(item_id, modifications)
     net.Start('PS_ModifyItem')
     net.WriteString(item_id)
-    net.WriteTable(modifications)
+    PS.WriteTable(modifications)
     net.SendToServer()
 end
 
@@ -78,9 +78,24 @@ net.Receive('PS_ToggleMenu', function(length)
     PS:ToggleMenu()
 end)
 
-net.Receive('PS_Items', function(length)
+local buffers = {}
+net.Receive("PS_Items", function()
     local ply = net.ReadEntity()
-    local items = net.ReadTable()
+    local done = net.ReadBool()
+    local length = net.ReadUInt(16)
+    local data = net.ReadData(length)
+    buffers[ply] = (buffers[ply] or "") .. data
+    if not done then return end
+    local uncompressed = util.Decompress(buffers[ply])
+    buffers[ply] = ""
+
+    if not uncompressed then
+        PS:Msg("Received items but couldn't decompres!")
+
+        return
+    end
+
+    local items = util.JSONToTable(uncompressed) or {}
     ply.PS_Items = PS:ValidateItems(items)
 
     -- Update buttons
@@ -124,7 +139,7 @@ net.Receive('PS_RemoveClientsideModel', function(length)
 end)
 
 net.Receive('PS_SendClientsideModels', function(length)
-    local itms = net.ReadTable()
+    local itms = PS.ReadTable()
 
     for ply, items in pairs(itms) do
         -- skip if the player isn't valid yet and add them to the table to sort out later

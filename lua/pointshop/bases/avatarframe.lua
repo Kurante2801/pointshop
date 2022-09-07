@@ -201,6 +201,10 @@ function PANEL:SetPlayer(ply, size)
     self.Player = ply
 end
 
+function PANEL:RequestFrame()
+    -- HNS compatibility
+end
+
 vgui.Register("HNS.Avatar", PANEL, "PS_AvatarFrame")
 
 return PS:RegisterBase(BASE)

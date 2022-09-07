@@ -332,6 +332,15 @@ hook.Add("PostGamemodeLoaded", "PS_Initialize", function()
     PS:Initialize()
 end)
 
+-- For simple and short tables
+function PS.WriteTable(tbl)
+    net.WriteString(util.TableToJSON(tbl))
+end
+
+function PS.ReadTable()
+    return util.JSONToTable(net.ReadString())
+end
+
 hook.Add("Think", "PS_Think", function()
     for _, ply in ipairs(player.GetAll()) do
         ply:PS_Think()

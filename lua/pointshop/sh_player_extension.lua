@@ -17,7 +17,7 @@ function Player:PS_IsSpectator()
 end
 
 function Player:PS_Think()
-    for item_id, item in pairs(self.PS_Items) do
+    for item_id, item in pairs(self.PS_Items or {}) do
         local ITEM = PS.Items[item_id]
 
         if item.Equipped then

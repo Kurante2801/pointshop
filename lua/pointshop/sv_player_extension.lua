@@ -8,7 +8,7 @@ function Player:PS_PlayerSpawn()
     timer.Simple(0, function()
         if not IsValid(self) or not self:PS_CanPerformAction() or self:PS_IsSpectator() then return end
 
-        for item_id, item in pairs(self.PS_Items) do
+        for item_id, item in pairs(self.PS_Items or {}) do
             local ITEM = PS.Items[item_id]
 
             if item.Equipped then
@@ -30,58 +30,37 @@ end
 function Player:PS_PlayerInitialSpawn()
     self.PS_Points = 0
     self.PS_Items = {}
+    self:PS_LoadData()
+end
 
-    -- Send stuff
-    timer.Simple(1, function()
-        if not IsValid(self) then return end
-        self:PS_LoadData()
-        self:PS_SendClientsideModels()
-    end)
+function Player:PS_NetReady()
+    self:PS_SendClientsideModels()
 
     if PS.Config.NotifyOnJoin then
-        if PS.Config.ShopKey ~= '' then
-            -- Give them time to load up
-            timer.Simple(5, function()
-                if not IsValid(self) then return end
-                self:PS_Notify('Press ' .. PS.Config.ShopKey .. ' to open PointShop!')
-            end)
+        if PS.Config.ShopKey ~= "" then
+            self:PS_Notify(string.format("Press %s to open PointShop!", PS.Config.ShopKey))
         end
 
-        if PS.Config.ShopCommand ~= '' then
-            -- Give them time to load up
-            timer.Simple(5, function()
-                if not IsValid(self) then return end
-                self:PS_Notify('Type ' .. PS.Config.ShopCommand .. ' in console to open PointShop!')
-            end)
+        if PS.Config.ShopCommand ~= "" then
+            self:PS_Notify(string.format("Type %s in console to open PointShop!", PS.Config.ShopCommand))
         end
 
-        if PS.Config.ShopChatCommand ~= '' then
-            -- Give them time to load up
-            timer.Simple(5, function()
-                if not IsValid(self) then return end
-                self:PS_Notify('Type ' .. PS.Config.ShopChatCommand .. ' in chat to open PointShop!')
-            end)
+        if PS.Config.ShopChatCommand ~= "" then
+            self:PS_Notify(string.format("Type %s in chat to open PointShop!", PS.Config.ShopChatCommand))
         end
 
-        -- Give them time to load up
-        timer.Simple(10, function()
-            if not IsValid(self) then return end
-            self:PS_Notify('You have ' .. self:PS_GetPoints() .. ' ' .. PS.Config.PointsName .. ' to spend!')
-        end)
-    end
-
-    if PS.Config.CheckVersion and PS.BuildOutdated and self:IsAdmin() then
-        timer.Simple(5, function()
-            if not IsValid(self) then return end
-            self:PS_Notify("PointShop is out of date, please tell the server owner!")
-        end)
+        self:PS_Notify(string.format("You have %s %s to spend!", self:PS_GetPoints(), PS.Config.PointsName))
     end
 
     if PS.Config.PointsOverTime then
-        timer.Create('PS_PointsOverTime_' .. self:UniqueID(), PS.Config.PointsOverTimeDelay * 60, 0, function()
-            if not IsValid(self) then return end
-            self:PS_GivePoints(PS.Config.PointsOverTimeAmount)
-            self:PS_Notify("You've been given ", PS.Config.PointsOverTimeAmount, " ", PS.Config.PointsName, " for playing on the server!")
+        local name = "PS_PointsOverTime_" .. self:SteamID64()
+        timer.Create(name, PS.Config.PointsOverTimeDelay * 60, 0, function()
+            if not IsValid(self) then
+                timer.Remove(name)
+            else
+                self:PS_GivePoints(PS.Config.PointsOverTimeAmount)
+                self:PS_Notify(string.format("You've been given %s %s for playing on the server!", PS.Config.PointsOverTimeAmount, PS.Config.PointsName))
+            end
         end)
     end
 end
@@ -481,16 +460,30 @@ function Player:PS_SendPoints()
     net.Broadcast()
 end
 
+-- Yogpod taught me this
 function Player:PS_SendItems()
-    net.Start('PS_Items')
-    net.WriteEntity(self)
-    net.WriteTable(self.PS_Items)
-    net.Broadcast()
+    local items = util.TableToJSON(self.PS_Items)
+    local compressed = util.Compress(items) or items
+    local len = string.len(compressed)
+    local send_size = 60000
+    local parts = math.ceil(len / send_size)
+    local start = 0
+
+    for i = 1, parts do
+        local endbyte = math.min(start + send_size, len)
+        local size = endbyte - start
+        net.Start("PS_Items")
+        net.WriteEntity(self)
+        net.WriteBool(i == parts)
+        net.WriteUInt(size, 16)
+        net.WriteData(compressed:sub(start + 1, endbyte + 1), size)
+        net.Broadcast()
+    end
 end
 
 function Player:PS_SendClientsideModels()
     net.Start('PS_SendClientsideModels')
-    net.WriteTable(PS.ClientsideModels)
+    PS.WriteTable(PS.ClientsideModels)
     net.Send(self)
 end
 
