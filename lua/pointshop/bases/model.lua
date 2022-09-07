@@ -25,6 +25,10 @@ function BASE:OnHolster(ply)
     ply:PS_RemoveClientsideModel(self.ID)
 end
 
+function BASE:OnSpawn(ply, mods)
+    self:OnEquip(ply, mods)
+end
+
 function BASE:OnPanelSetup(panel)
     -- Instead of rendering the model, render a premade image
     if self.PanelImage then

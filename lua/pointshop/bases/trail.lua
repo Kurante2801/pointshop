@@ -41,6 +41,10 @@ function BASE:OnSpawn(ply, mods)
     self:OnEquip(ply, mods)
 end
 
+function BASE:OnSpawn(ply, mods)
+    self:OnEquip(ply, mods)
+end
+
 function BASE:OnDeath(ply, mods)
     self:OnHolster(ply, mods)
 end

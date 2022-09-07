@@ -11,6 +11,11 @@ function BASE:OnHolster(ply)
     ply:SetNWString("LBG_AvatarFrame", "")
 end
 
+-- OnEquip is not called when joining the server
+function BASE:OnSpawn(ply, mods)
+    self:OnEquip(ply, mods)
+end
+
 function BASE:OnPreDrawFrame(ply, w, h)
     surface.SetDrawColor(255, 255, 255, 255)
 end

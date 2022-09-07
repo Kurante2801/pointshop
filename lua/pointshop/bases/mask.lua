@@ -16,6 +16,13 @@ end
 local materials = {}
 function BASE:OnPlayerDraw(ply)
     if self:GamemodeCheck() then return end
+    if not ply:Alive() then
+        ply = ply:GetRagdollEntity()
+        if not IsValid(ply) then
+            return
+        end
+    end
+
 
     if not materials[self.Material] then
         materials[self.Material] = Material(self.Material, "noclamp smooth")

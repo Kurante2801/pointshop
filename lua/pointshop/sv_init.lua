@@ -153,7 +153,6 @@ hook.Add("PlayerInitialSpawn", "PS_PlayerInitialSpawn", function(ply)
         if this == ply and not cmd:IsForced() then
             hook.Remove("SetupMove", this)
             ply:PS_NetReady()
-            ply:PS_PlayerSpawn()
         end
     end)
 end)

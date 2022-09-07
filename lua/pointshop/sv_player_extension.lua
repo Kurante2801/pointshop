@@ -34,6 +34,7 @@ function Player:PS_PlayerInitialSpawn()
 end
 
 function Player:PS_NetReady()
+    self:PS_PlayerSpawn()
     self:PS_SendClientsideModels()
 
     if PS.Config.NotifyOnJoin then
@@ -273,6 +274,21 @@ function Player:PS_NumItemsEquippedFromCategory(cat_name)
     return count
 end
 
+-- used as a default if an item is missing the SanitizeTable function. Catches colors/text
+local function Sanitize(modifications)
+    local out = {}
+
+    if isstring(modifications.text) then
+        out.text = modifications.text
+    end
+
+    if modifications.color then
+        out.color = Color(modifications.color.r or 255, modifications.color.g or 255, modifications.color.b or 255)
+    end
+
+    return out
+end
+
 -- equip/hoster items
 function Player:PS_EquipItem(item_id)
     if not PS.Items[item_id] then return false end
@@ -294,10 +310,14 @@ function Player:PS_EquipItem(item_id)
 
     local CATEGORY = PS.Categories[ITEM.Category]
 
-    if CATEGORY and CATEGORY.AllowedEquipped > -1 then
-        if self:PS_NumItemsEquippedFromCategory(ITEM.Category) + 1 > CATEGORY.AllowedEquipped then
-            self:PS_Notify('Only ' .. CATEGORY.AllowedEquipped .. ' item' .. (CATEGORY.AllowedEquipped == 1 and '' or 's') .. ' can be equipped from this category!')
-
+    -- Unequip old when 1 allowed equipped
+    if CATEGORY and CATEGORY.AllowedEquipped == 1 then
+        for id, _ in pairs(self:PS_GetItemsEquippedFromCategory(ITEM.Category)) do
+            self:PS_HolsterItem(id)
+        end
+    elseif CATEGORY and CATEGORY.AllowedEquipped and CATEGORY.AllowedEquipped > -1 then
+        if self:PS_NumItemsEquippedFromCategory(ITEM.Category) >= CATEGORY.AllowedEquipped then
+            self:PS_Notify(string.format("Only %s %s from this category allowed.", CATEGORY.AllowedEquipped, CATEGORY.AllowedEquipped == 1 and "item" or "items"))
             return false
         end
     end
@@ -324,31 +344,21 @@ function Player:PS_EquipItem(item_id)
                 end
             end
         end
-
-        local NumEquipped = self.PS_NumItemsEquippedFromCategory
-
-        for id, item in pairs(self.PS_Items) do
-            if not self:PS_HasItemEquipped(id) then continue end
-            local Cat = PS.Categories[PS.Items[id].Category]
-            if not Cat.SharedCategories then continue end
-
-            for _, SharedCategory in pairs(Cat.SharedCategories) do
-                if SharedCategory == CATEGORY.Name then
-                    if Cat.AllowedEquipped > -1 and CATEGORY.AllowedEquipped > -1 then
-                        if NumEquipped(self, Cat.ID) + NumEquipped(self, CATEGORY.Name) + 1 > Cat.AllowedEquipped then
-                            self:PS_Notify('Only ' .. Cat.AllowedEquipped .. ' item' .. (Cat.AllowedEquipped == 1 and '' or 's') .. ' can be equipped over ' .. ConCatCats .. '!')
-
-                            return false
-                        end
-                    end
-                end
-            end
-        end
     end
 
     self.PS_Items[item_id].Equipped = true
-    ITEM:OnEquip(self, self.PS_Items[item_id].Modifiers)
-    self:PS_Notify('Equipped ', ITEM.Name, '.')
+    local mods = self.PS_Items[item_id].Modifiers or {}
+
+    if ITEM.SanitizeTable then
+        mods = ITEM:SanitizeTable(mods)
+    else
+        mods = Sanitize(mods)
+    end
+
+    self.PS_Items[item_id].Modifiers = mods
+
+    ITEM:OnEquip(self, mods)
+    self:PS_Notify("Equipped ", ITEM.Name, ".")
     hook.Call("PS_ItemUpdated", nil, self, item_id, PS_ITEM_EQUIP)
     PS:SavePlayerItem(self, item_id, self.PS_Items[item_id])
     self:PS_SendItems()
@@ -378,21 +388,6 @@ function Player:PS_HolsterItem(item_id)
     hook.Call("PS_ItemUpdated", nil, self, item_id, PS_ITEM_HOLSTER)
     PS:SavePlayerItem(self, item_id, self.PS_Items[item_id])
     self:PS_SendItems()
-end
-
--- used as a default if an item is missing the SanitizeTable function. Catches colors/text
-local function Sanitize(modifications)
-    local out = {}
-
-    if isstring(modifications.text) then
-        out.text = modifications.text
-    end
-
-    if modifications.color then
-        out.color = Color(modifications.color.r or 255, modifications.color.g or 255, modifications.color.b or 255)
-    end
-
-    return out
 end
 
 function Player:PS_ModifyItem(item_id, modifications)
