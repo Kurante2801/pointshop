@@ -116,7 +116,7 @@ PS.ShadowedText = function(text, font, x, y, color, alignx, aligny, blur)
     if blur ~= 0 then
         text_shadow.a = color.a * 0.25
         draw_SimpleText(text, font, x + blur * 2, y + blur * 2, text_shadow, alignx, aligny)
-        text_shadow.a = color.a * 0.5
+        text_shadow.a = color.a * 0.7
         draw_SimpleText(text, font, x + blur, y + blur, text_shadow, alignx, aligny)
     end
 
@@ -147,7 +147,7 @@ PS.ShadowedImage = function(material, x, y, w, h, color, alignx, aligny, blur)
     surface.SetDrawColor(0, 0, 0, color.a * 0.25)
     surface.DrawTexturedRect(x + blur * 2, y + blur * 2, w, h)
 
-    surface.SetDrawColor(0, 0, 0, color.a * 0.5)
+    surface.SetDrawColor(0, 0, 0, color.a * 0.7)
     surface.DrawTexturedRect(x + blur, y + blur, w, h)
 
     surface.SetDrawColor(color.r, color.g, color.b, color.a)
