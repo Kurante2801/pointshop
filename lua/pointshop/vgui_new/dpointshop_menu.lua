@@ -778,7 +778,6 @@ function PANEL:MakeSubcategories(button, category)
 
         local header = panel:Add("DPanel")
         header:Dock(TOP)
-        header:InvalidateLayout(true)
         header:DockMargin(0, 0, 0, 6)
         header:DockPadding(0, tall, 0, 0)
         header:SetZPos(subcategory.Order * 2)
@@ -853,6 +852,11 @@ function PANEL:OnItemSelected(item)
     local ang = self.MDL.Entity:GetAngles()
     self.MDL:SetModel(ply:GetModel())
     self.MDL.Entity:SetAngles(ang)
+    self.MDL.Entity:SetSkin(ply:GetSkin())
+
+    for _, group in ipairs(ply:GetBodyGroups()) do
+        self.MDL.Entity:SetBodygroup(group.id, ply:GetBodygroup(group.id))
+    end
 
     for _, mdl in ipairs(self.MDL.Models) do
         SafeRemoveEntity(mdl)
@@ -881,6 +885,7 @@ function PANEL:OnItemSelected(item)
 
     if item.IsPlayermodel then
         self.MDL:SetModel(item.Model)
+        item:SetBodygroups(self.MDL.Entity, item.Modifiers or {})
         return
     end
 

@@ -482,6 +482,19 @@ function PANEL:LayoutEntity(ent)
 
         ent:SetAngles(self.Angles)
     end
+
+    if not PS.ActiveItem then
+        local ply = LocalPlayer()
+        if ent.Skin ~= ply:GetSkin() then
+            ent:SetSkin(ply:GetSkin())
+        end
+
+        for _, group in ipairs(ply:GetBodyGroups()) do
+            if ent:GetBodygroup(group.id) ~= ply:GetBodygroup(group.id) then
+                ent:SetBodygroup(group.id, ply:GetBodygroup(group.id))
+            end
+        end
+    end
 end
 
 function PANEL:OnRemove()

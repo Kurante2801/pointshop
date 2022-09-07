@@ -77,6 +77,26 @@ PS.MasterBase = {
         elseif this.GamemodesBlacklistIndex then
             return this.GamemodesBlacklistIndex[GAMEMODE.FolderName]
         end
+    end,
+    
+    SetupThinker = function(this, panel, mods_reference, mods_copy, compare_func, on_change)
+        local thinker = panel:Add("EditablePanel")
+        thinker:SetMouseInputEnabled(false)
+        thinker.Mods = mods_copy
+        thinker.LastSent = CurTime()
+        thinker.Think = function(_this)
+            if CurTime() - _this.LastSent < 0.5 then return end
+
+            if compare_func(mods_reference, mods_copy) then
+                _this.LastSent = CurTime()
+                on_change(mods_reference, mods_copy)
+
+                net.Start("PS_ModifyItem")
+                net.WriteString(this.ID)
+                net.WriteString(util.TableToJSON(mods_reference))
+                net.SendToServer()
+            end
+        end
     end
 }
 
@@ -350,3 +370,117 @@ end)
 hook.Add("Move", "PS_Move", function(ply, data)
     ply:PS_Move(data)
 end)
+
+-- Color utils
+PS.ValidHEX = {
+    ["0"] = true,
+    ["A"] = true,
+    ["1"] = true,
+    ["B"] = true,
+    ["2"] = true,
+    ["C"] = true,
+    ["3"] = true,
+    ["D"] = true,
+    ["4"] = true,
+    ["E"] = true,
+    ["5"] = true,
+    ["F"] = true,
+    ["6"] = true,
+    ["7"] = true,
+    ["8"] = true,
+    ["9"] = true,
+}
+
+PS.SanitizeHEX = function(hex)
+    -- If given invalid, return white
+    if not hex or not isstring(hex) then return "FFFFFF" end
+    -- Remove # if it has one and make all uppercase
+    hex = string.Replace(hex, "#", "")
+    hex = string.upper(hex)
+
+    -- Now we check if the string is using an unvalid char.
+    for i = 1, 6 do
+        -- We are checking if the character is on the ValidHex table. Otherwise replace with an F
+        if not PS.ValidHEX[hex[i]] then
+            -- Strings in lua are inmutable, so we do some fuckery to create a new one
+            hex = string.format("%s%s%s", string.sub(hex, 1, i - 1), "F", string.sub(hex, i + 1))
+        end
+    end
+
+    -- Limit to 6 chars
+    if #hex > 6 then
+        hex = string.sub(hex, 1, 6)
+    end
+
+    return hex
+end
+
+-- Returns a valid HEX string
+PS.SanitizeHEX = function(hex)
+    -- If given invalid, return white
+    if not hex or not isstring(hex) then return "FFFFFF" end
+    -- Remove # if it has one and make all uppercase
+    hex = string.Replace(hex, "#", "")
+    hex = string.upper(hex)
+
+    -- Now we check if the string is using an unvalid char.
+    for i = 1, 6 do
+        -- We are checking if the character is on the ValidHex table. Otherwise replace with an F
+        if not PS.ValidHEX[hex[i]] then
+            -- Strings in lua are inmutable, so we do some fuckery to create a new one
+            hex = string.format("%s%s%s", string.sub(hex, 1, i - 1), "F", string.sub(hex, i + 1))
+        end
+    end
+
+    -- Limit to 6 chars
+    if #hex > 6 then
+        hex = string.sub(hex, 1, 6)
+    end
+
+    return hex
+end
+
+PS.HEXtoRGB = function(hex)
+    hex = PS.SanitizeHEX(hex)
+    -- Separate RRGGBB
+    local r, g, b = string.sub(hex, 1, 2), string.sub(hex, 3, 4), string.sub(hex, 5, 6)
+
+    -- Turn those into numbers and return them as a Color
+    return Color(tonumber(r, 16), tonumber(g, 16), tonumber(b, 16))
+end
+
+PS.RGBtoHEX = function(colorTable)
+    local hexadecimal = "" -- End result
+
+    for i = 1, 3 do
+        local color
+
+        if i == 1 then
+            color = colorTable.r
+        elseif i == 2 then
+            color = colorTable.g
+        else
+            color = colorTable.b
+        end
+
+        local hex = ""
+
+        -- Get RRGGBB
+        while color > 0 do
+            local e = color % 16 + 1
+            color = math.floor(color / 16)
+            hex = string.sub("0123456789ABCDEF", e, e) .. hex
+        end
+
+        -- If number is below 10, fix
+        if string.len(hex) == 1 then
+            hex = "0" .. hex
+        elseif string.len(hex) == 0 then
+            hex = "00"
+        end
+
+        hexadecimal = hexadecimal .. hex
+    end
+
+    return hexadecimal
+end

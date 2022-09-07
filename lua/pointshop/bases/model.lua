@@ -151,36 +151,19 @@ if CLIENT then
 end
 
 function BASE:OnCustomizeSetup(panel, mods)
-    PrintTable(mods)
     mods.pos = mods.pos or Vector()
     mods.ang = mods.ang or Angle()
     mods.scale = mods.scale or 1
 
-    local thinker = panel:Add("EditablePanel")
-    thinker:SetMouseInputEnabled(false)
-    thinker.Mods = {
+    self:SetupThinker(panel, mods, {
         pos = Vector(mods.pos), ang = Angle(mods.ang), scale = mods.scale
-    }
-    thinker.LastSent = CurTime()
-    thinker.Think = function(this)
-        if CurTime() - this.LastSent < 0.5 then return end
-
-        if this.Mods.pos ~= mods.pos or this.Mods.ang ~= mods.ang or this.Mods.scale ~= mods.scale then
-            this.LastSent = CurTime()
-
-            this.Mods = {
-                pos = Vector(mods.pos.x, mods.pos.y, mods.pos.z),
-                ang = Angle(mods.ang.x, mods.ang.y, mods.ang.z),
-                scale = mods.scale,
-            }
-
-            net.Start("PS_ModifyItem")
-            net.WriteString(self.ID)
-            net.WriteString(util.TableToJSON(mods))
-            net.SendToServer()
-        end
-    end
-
+    }, function(a, b)
+        return a.pos ~= b.pos or a.ang ~= b.ang or a.scale ~= b.scale
+    end, function(reference, copy)
+        copy.pos = Vector(reference.pos)
+        copy.ang = Angle(reference.ang)
+        copy.scale = reference.ang
+    end)
 
     self:AddSlider(panel, "Position X", mods.pos.x, self.PositionMinMax[1], self.PositionMinMax[2], 0.5, function(value)
         mods.pos.x = value
