@@ -37,8 +37,8 @@ function BASE:OnPanelPaint(panel, w, h)
     surface.DrawTexturedRect(6, 6, 128, 128)
  end
 
--- Steam IDs
-BASE.Frames = {}
+-- [SteamID64] = id.png
+PS.AvatarFrames = PS.AvatarFrames or {}
 
 -- Avatar Frame
 local PANEL = {}
@@ -79,7 +79,7 @@ function PANEL:SetItem(id)
     end
 
     self.Item = item
-    self.Material = Material(item.Material)
+    self.Material = Material(item.Material, "noclamp smooth")
 end
 
 function PANEL:SetMaterial(material)
@@ -96,17 +96,22 @@ function PANEL:AutoLayout()
     self:SetSize(size, size)
 end
 
+function PANEL:RequestFrame()
+    -- HNS compatibility
+end
+
 function PANEL:RequestSteamFrame()
     self.AttemptedSteam = true
     local ply = self.Player
     if ply:IsBot() then return end
 
-    if BASE.Frames[ply:SteamID64()] then
-        local name = BASE.Frames[ply:SteamID64()]
-        if file.Exists(string.format("materials/steam_avatarframes/%s.vtf", name), "GAME") then
-            self.Material = Material("steam_avatarframes/" .. name)
+    local name = PS.AvatarFrames[ply:SteamID64()]
+    if name then
+        if string.EndsWith(name, ".png") then
+            self.Material = Material("data/lbg_steam_avatarframes/" .. name, "noclamp smooth")
+            print(CurTime())
         else
-            self.Material = Material(string.format("data/lbg_steam_avatarframes/%s.png", name), "noclamp smooth")
+            self.Material = Material("steam_avatarframes/" .. name)
         end
         return
     end
@@ -118,20 +123,22 @@ function PANEL:RequestSteamFrame()
         local _, _, url = string.find(body, [[<div class="profile_avatar_frame">%s*<img src="(.-)">]])
         -- Frame not found
         if not url then
-            BASE.Frames[ply:SteamID64()] = false
+            PS.AvatarFrames[ply:SteamID64()] = false
             return
         end
 
-        local _, _, name = string.find(url, [[/([%a%d]+)%.png]])
+        _, _, name = string.find(url, [[/([%a%d]+)%.png]])
         if not name then return end
-        -- Frame yes found
-        BASE.Frames[ply:SteamID64()] = name
 
         -- We check if there are any manually created VTF material
         if file.Exists(string.format("materials/steam_avatarframes/%s.vtf", name), "GAME") then
+            PS.AvatarFrames[ply:SteamID64()] = name
             self.Material = Material("steam_avatarframes/" .. name)
             return
         end
+
+        name = name .. ".png"
+        PS.AvatarFrames[ply:SteamID64()] = name
 
         -- We download and create the frame
         -- since GMod can't animate APNGs, the frame will not be animated
@@ -142,12 +149,12 @@ function PANEL:RequestSteamFrame()
                 file.CreateDir("lbg_steam_avatarframes")
             end
 
-            local path = string.format("lbg_steam_avatarframes/%s.png", name)
+            local path = "lbg_steam_avatarframes/" .. name
             if not file.Exists(path, "DATA") then
                 file.Write(path, src)
             end
 
-            self.Material = Material(string.format("data/lbg_steam_avatarframes/%s.png", name), "noclamp smooth")
+            self.Material = Material("data/" .. path, "noclamp smooth")
         end)
     end, function(err) print(err) end)
 end
@@ -158,5 +165,42 @@ end
 
 vgui.Register("HNS.AvatarFrame", PANEL, "DPanel")
 vgui.Register("PS_AvatarFrame", PANEL, "DPanel")
+
+PANEL = {}
+PANEL.PaddingMultiplier = 1.22
+
+function PANEL:Init()
+    self.Avatar = self:Add("AvatarImage")
+    self.Avatar:Dock(FILL)
+    self.Avatar:SetPaintedManually(true)
+end
+
+function PANEL:Paint(w, h)
+    self.Avatar:PaintManual()
+
+    if self.Item and self.Material then
+        self.Item:OnPreDrawFrame(self.Player, w, h)
+    elseif self.Material then
+        surface.SetDrawColor(255, 255, 255, 255)
+    else
+        return
+    end
+
+    surface.SetMaterial(self.Material)
+    surface.DrawTexturedRect(0, 0, w, h)
+end
+
+function PANEL:PerformLayout(w, h)
+    self.PaddingX = (w - w / self.PaddingMultiplier) * 0.5
+    self.PaddingY = (h - h / self.PaddingMultiplier) * 0.5
+    self:DockPadding(self.PaddingX, self.PaddingY,self.PaddingX, self.PaddingY)
+end
+
+function PANEL:SetPlayer(ply, size)
+    self.Avatar:SetPlayer(ply, size)
+    self.Player = ply
+end
+
+vgui.Register("HNS.Avatar", PANEL, "PS_AvatarFrame")
 
 return PS:RegisterBase(BASE)
