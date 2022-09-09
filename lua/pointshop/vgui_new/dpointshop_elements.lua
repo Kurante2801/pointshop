@@ -531,7 +531,8 @@ function PANEL:Init()
     self.EquippedMat = Material("lbg_pointshop/derma/checkroom.png")
 
     self:TDLib()
-        :SetupTransition("MouseHover", 12, function(this) return this:IsHovered() or PS.ActiveItem == this.Item.ID or PS.ActiveItem == this.Item end)
+        :SetupTransition("MouseHover", 12, TDLibUtil.HoverFunc)
+        :SetupTransition("ItemActive", 12, function(this) return PS.ActiveItem == this.Item.ID or PS.ActiveItem == this.Item end)
 end
 
 function PANEL:Paint(w, h)
@@ -540,12 +541,12 @@ function PANEL:Paint(w, h)
 
     if self.Item then
         owned = LocalPlayer():PS_HasItem(self.Item.ID)
-        self._back = LocalPlayer():PS_HasItemEquipped(self.Item.ID) and "SuccessColor" or (owned and "Foreground2Color" or "Foreground1Color")
+        self._back = owned and "Foreground2Color" or "Foreground1Color"
     end
-
 
     draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(self._back))
     draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 125 * self.MouseHover))
+    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 255 * self.ItemActive))
     draw_RoundedBox(6, 6, 6, w - 12, w - 12, PS:GetThemeVar("BackgroundColor"))
 
     if not self.Item then return end
