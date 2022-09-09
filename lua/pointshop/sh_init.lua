@@ -78,7 +78,6 @@ PS.MasterBase = {
             return this.GamemodesBlacklistIndex[GAMEMODE.FolderName]
         end
     end,
-    
     SetupThinker = function(this, panel, mods_reference, mods_copy, compare_func, on_change)
         local thinker = panel:Add("EditablePanel")
         thinker:SetMouseInputEnabled(false)
@@ -97,6 +96,153 @@ PS.MasterBase = {
                 net.SendToServer()
             end
         end
+    end,
+    AddSlider = function(this, panel, text, value, min, max, snap, callback)
+        local slider = panel:Add("PS_HorizontalSlider")
+        slider.TextArea:SetWide(80)
+        slider:Dock(TOP)
+        slider:DockMargin(0, 0, 0, 6)
+        slider:SetText(text)
+        slider:SetSnap(snap)
+        slider:SetMinMax(min, max)
+        slider:SetValue(value)
+        slider:SetDefaultValue(0)
+        slider.OnValueChanged = function(_, _value)
+            callback(_value)
+        end
+
+        local button = slider:Add("PS_ButtonIcon")
+        button:Dock(LEFT)
+        button:DockMargin(0, 0, 6, 0)
+        button:SetWide(32)
+        button:SetIcon("lbg_pointshop/derma/reset.png", 20, 20)
+        button.DoClick = function()
+            slider:SetValue(slider:GetDefaultValue())
+        end
+
+        return slider
+    end,
+    AddBool = function(this, panel, text, noText, yesText, value, callback)
+        local container = panel:Add("EditablePanel")
+        container:Dock(TOP)
+        container:DockMargin(0, 0, 0, 6)
+        container:SetTall(32)
+
+        container.Text = container:Add("PS_Button")
+        container.Text:Dock(LEFT)
+        container.Text:DockMargin(0, 0, 6, 0)
+        container.Text:SetText(text)
+        container.Text:SizeToContents()
+        container.Text:SetWide(container.Text:GetWide() + 12)
+        container.Text:SetMouseInputEnabled(false)
+        container.Text:SetThemeMainColor("Foreground1Color")
+
+        container.No = container:Add("PS_Button")
+        container.No:Dock(LEFT)
+        container.No:DockMargin(0, 0, 6, 0)
+        container.No:SetText(noText)
+        container.No:SizeToContents()
+        container.No:SetWide(container.No:GetWide() + 12)
+        container.No:SetupTransition("Selected", 6, function() return not value end)
+        container.No.Paint = function(_this, w, h)
+            draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground2Color"))
+            draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 75 * _this.MouseHover))
+            draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 255 * _this.Selected))
+        end
+        container.No.DoClick = function()
+            value = false
+            callback(false)
+        end
+
+        container.Yes = container:Add("PS_Button")
+        container.Yes:Dock(LEFT)
+        container.Yes:DockMargin(0, 0, 6, 0)
+        container.Yes:SetText(yesText)
+        container.Yes:SizeToContents()
+        container.Yes:SetWide(container.Yes:GetWide() + 12)
+        container.Yes:SetupTransition("Selected", 6, function() return value end)
+        container.Yes.Paint = function(_this, w, h)
+            draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground2Color"))
+            draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 75 * _this.MouseHover))
+            draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 255 * _this.Selected))
+        end
+        container.Yes.DoClick = function()
+            value = true
+            callback(true)
+        end
+
+        return container
+    end,
+    AddComboBox = function(this, panel, text, value, values, data, callback)
+        local container = panel:Add("EditablePanel")
+        container:Dock(TOP)
+        container:DockMargin(0, 0, 0, 6)
+        container:SetTall(32)
+
+        container.Text = container:Add("PS_Button")
+        container.Text:Dock(LEFT)
+        container.Text:DockMargin(0, 0, 6, 0)
+        container.Text:SetText(text)
+        container.Text:SizeToContents()
+        container.Text:SetWide(container.Text:GetWide() + 12)
+        container.Text:SetMouseInputEnabled(false)
+        container.Text:SetThemeMainColor("Foreground1Color")
+
+        container.ComboBox = container:Add("PS_ComboBox")
+        container.ComboBox:Dock(FILL)
+        container.ComboBox:SetValue(value)
+        container.ComboBox.OnSelect = function(_, i, v, d)
+            callback(v, d)
+        end
+
+        for i, v in ipairs(values) do
+            container.ComboBox:AddChoice(v, data[i])
+        end
+
+        return container
+    end,
+    AddSelector = function(this, panel, text, value, values, callback)
+        local container = panel:Add("EditablePanel")
+        container:Dock(TOP)
+        container:DockMargin(0, 0, 0, 6)
+        container:SetTall(32)
+
+        container.header = container:Add("PS_Button")
+        container.header:Dock(LEFT)
+        container.header:DockMargin(0, 0, 6, 0)
+        container.header:SetWide(180)
+        container.header:SetText(text)
+        container.header:SetMouseInputEnabled(false)
+        container.header:SetThemeMainColor("Foreground1Color")
+
+        container.grid = container:Add("DIconLayout")
+        container.grid:Dock(TOP)
+        container.grid:SetSpaceX(6)
+        container.grid:SetSpaceY(6)
+
+        container.buttons = {}
+        for _, v in ipairs(values) do
+            container.button = container.grid:Add("PS_Button")
+            container.button:SetText(v)
+            container.button:SetTall(32)
+            container.button:SetupTransition("Selected", 6, function() return value == v end)
+            container.button.Paint = function(_this, w, h)
+                draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+                draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 255 * _this.Selected))
+            end
+            container.button.DoClick = function()
+                value = v
+                callback(v)
+            end
+    
+            table.insert(container.buttons, container.button)
+        end
+
+        container.grid:TDLib():On("PerformLayout", function(_this)
+            container:SetTall(_this:GetTall())
+        end)
+
+        return container
     end
 }
 
@@ -483,4 +629,14 @@ PS.RGBtoHEX = function(colorTable)
     end
 
     return hexadecimal
+end
+
+function PS.TablesEqual(a, b)
+    for key, value in pairs(a) do
+        if b[key] ~= value then
+            return false
+        end
+    end
+
+    return true
 end

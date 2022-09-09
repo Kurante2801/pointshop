@@ -108,18 +108,9 @@ function BASE:OnCustomizeSetup(panel, mods)
     self:SetupThinker(panel, mods, {
         skin = mods.skin, bodygroups = table.Copy(mods.bodygroups)
     }, function(a, b)
-        if a.skin ~= b.skin then return true end
-
-        for _, group in ipairs(self.Bodygroups or {}) do
-            if a.bodygroups[group.id] ~= b.bodygroups[group.id] then
-                return true
-            end
-        end
-
-        return false
+        return not PS.TablesEqual(a, b)
     end, function(reference, copy)
-        copy.skin = reference.skin
-        copy.bodygroups = reference.bodygroups and table.Copy(reference.bodygroups) or nil
+        return table.Copy(reference)
     end)
 
     if self.Skins and #self.Skins > 1 then
@@ -137,45 +128,6 @@ function BASE:OnCustomizeSetup(panel, mods)
             end
         end
     end
-end
-
-function BASE:AddSelector(panel, text, value, values, callback)
-    local container = panel:Add("EditablePanel")
-    container:Dock(TOP)
-    container:DockMargin(0, 0, 0, 6)
-    container:SetTall(32)
-
-    local header = container:Add("PS_Button")
-    header:Dock(LEFT)
-    header:DockMargin(0, 0, 6, 0)
-    header:SetWide(180)
-    header:SetText(text)
-    header:SetMouseInputEnabled(false)
-    header:SetThemeMainColor("Foreground1Color")
-
-    local grid = container:Add("DIconLayout")
-    grid:Dock(TOP)
-    grid:SetSpaceX(6)
-    grid:SetSpaceY(6)
-
-    for _, v in ipairs(values) do
-        local button = grid:Add("PS_Button")
-        button:SetText(v)
-        button:SetTall(32)
-        button:SetupTransition("Selected", 6, function() return value == v end)
-        button.Paint = function(this, w, h)
-            draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
-            draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 255 * this.Selected))
-        end
-        button.DoClick = function()
-            value = v
-            callback(v)
-        end
-    end
-
-    grid:TDLib():On("PerformLayout", function(this)
-        container:SetTall(this:GetTall())
-    end)
 end
 
 function BASE:ToString()

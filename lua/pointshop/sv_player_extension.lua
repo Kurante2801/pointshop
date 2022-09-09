@@ -404,6 +404,7 @@ function Player:PS_ModifyItem(item_id, modifications)
         modifications = Sanitize(modifications)
     end
 
+    table.Empty(self.PS_Items[item_id].Modifiers)
     for key, value in pairs(modifications) do
         self.PS_Items[item_id].Modifiers[key] = value
     end

@@ -158,11 +158,13 @@ function BASE:OnCustomizeSetup(panel, mods)
     self:SetupThinker(panel, mods, {
         pos = Vector(mods.pos), ang = Angle(mods.ang), scale = mods.scale
     }, function(a, b)
-        return a.pos ~= b.pos or a.ang ~= b.ang or a.scale ~= b.scale
+        return not PS.TablesEqual(a, b)
     end, function(reference, copy)
-        copy.pos = Vector(reference.pos)
-        copy.ang = Angle(reference.ang)
-        copy.scale = reference.ang
+        return {
+            pos = Vector(reference.pos),
+            ang = Angle(reference.ang),
+            scale = reference.scale
+        }
     end)
 
     self:AddSlider(panel, "Position X", mods.pos.x, self.PositionMinMax[1], self.PositionMinMax[2], 0.5, function(value)
@@ -187,32 +189,6 @@ function BASE:OnCustomizeSetup(panel, mods)
     self:AddSlider(panel, "Scale", mods.scale, self.ScaleMinMax[1], self.ScaleMinMax[2], 0.05, function(value)
         mods.scale = value
     end):SetDefaultValue(1)
-end
-
-function BASE:AddSlider(panel, text, value, min, max, snap, callback)
-    local slider = panel:Add("PS_HorizontalSlider")
-    slider.TextArea:SetWide(80)
-    slider:Dock(TOP)
-    slider:DockMargin(0, 0, 0, 6)
-    slider:SetText(text)
-    slider:SetSnap(snap)
-    slider:SetMinMax(min, max)
-    slider:SetValue(value)
-    slider:SetDefaultValue(0)
-    slider.OnValueChanged = function(this, _value)
-        callback(_value)
-    end
-
-    local button = slider:Add("PS_ButtonIcon")
-    button:Dock(LEFT)
-    button:DockMargin(0, 0, 6, 0)
-    button:SetWide(32)
-    button:SetIcon("lbg_pointshop/derma/reset.png", 20, 20)
-    button.DoClick = function()
-        slider:SetValue(slider:GetDefaultValue())
-    end
-
-    return slider
 end
 
 function BASE:SanitizeTable(mods)
