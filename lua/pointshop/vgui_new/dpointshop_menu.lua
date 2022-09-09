@@ -696,9 +696,9 @@ function PANEL:PopulateCategories()
     self.AdminButton:SetZPos(i)
     self.AdminButton:SetTall(46)
     self.AdminButton.Mat = Material("lbg_pointshop/derma/admin_panel_settings.png", "noclamp smooth")
+
     self.AdminButton.Panel = self.Container:Add("DPanel")
-    self.AdminButton.Panel:Dock(FILL)
-    self.AdminButton.Panel:DockMargin(12, 12, 0, 12)
+    self:MakeAdminPanel(self.AdminButton.Panel)
     self.AdminButton.Panel:Hide()
 
     self.AdminButton:TDLib()
@@ -711,9 +711,11 @@ function PANEL:PopulateCategories()
         :On("DoClick", function(this)
             if this.Active then return end
 
+            self:OnItemSelected(PS.ActiveItem)
             self:HidePanels()
             this.Active = true
             self.AdminButton.Panel:Show()
+            self:SetDataText("Admin Panel", "")
         end)
         PS:FadeHover(self.AdminButton, "Foreground2Color", 125, 6, 6)
         PS:FadeActive(self.AdminButton, "MainColor", 255, 6, 6)
@@ -752,11 +754,11 @@ function PANEL:SetDataText(title, desc)
     -- Super hack to support multiline text
     local parsed = markup.Parse(string.format("<font=%s>%s</font>", "PS_Label", desc), 230)
 
-    for i, block in ipairs(parsed.blocks) do
+    for ii, block in ipairs(parsed.blocks) do
         local text = self.ItemDesc:Add("EditablePanel")
         text:Dock(BOTTOM)
         text:SetTall(18)
-        text:SetZPos(-i)
+        text:SetZPos(-ii)
         text._text = block.text
         text:TDLib()
             :On("Paint", function(this, w, h)
@@ -821,11 +823,11 @@ function PANEL:MakeSubcategories(button, category)
        -- Super hack to support multiline text
         local parsed = markup.Parse(string.format("<font=%s>%s</font>", "PS_Label", subcategory.Description or ""), wide)
 
-        for i, block in ipairs(parsed.blocks) do
+        for ii, block in ipairs(parsed.blocks) do
             local text = header:Add("EditablePanel")
             text:Dock(TOP)
             text:SetTall(18)
-            text:SetZPos(i)
+            text:SetZPos(ii)
             text._text = block.text
             text:TDLib()
                 :On("Paint", function(this, w, h)
@@ -869,6 +871,94 @@ function PANEL:MakeSubcategories(button, category)
         itembutton.OnItemSelected = function(this)
             self:OnItemSelected(this.Item)
         end
+    end
+end
+
+function PANEL:MakeAdminPanel(panel)
+    panel:Dock(FILL)
+    panel:DockMargin(12, 12, 0, 12)
+    panel.Paint = emptyfunc
+
+    panel.Player = nil
+
+    local playerContainer = panel:Add("EditablePanel")
+    playerContainer:Dock(TOP)
+    playerContainer:SetTall(128)
+
+    local avatar = playerContainer:Add("AvatarImage")
+    avatar:Dock(LEFT)
+    avatar:DockMargin(0, 0, 16, 0)
+    avatar:SetWide(128)
+
+    local selector = playerContainer:Add("PS_ComboBox")
+    selector:Dock(TOP)
+    selector:SetTall(32)
+    selector:DockMargin(0, 0, 0, 16)
+    selector.DoClick = function(this)
+        local value = this:GetOptionText(this:GetSelectedID())
+        this:Clear()
+        this:SetValue(value or "")
+
+        for _, ply in ipairs(player.GetAll()) do
+            this:AddChoice(string.format("%s (%s) [UID: %s]", ply:Name(), ply:SteamID(), ply:UniqueID()), ply)
+        end
+        if this:IsMenuOpen() then
+            this:CloseMenu()
+        else
+            this:OpenMenu()
+        end
+    end
+
+    local points = playerContainer:Add("PS_Button")
+    points:Dock(TOP)
+    points:DockMargin(0, 0, 0, 16)
+    points:SetThemeMainColor("Foreground1Color")
+    points:SetTall(32)
+    points:SetMouseInputEnabled(false)
+    points:SetContentAlignment(4)
+    points:SetText("Points: ???")
+    points.Think = function(this)
+        if panel.Player then
+            this:SetText("Points: " .. panel.Player:PS_GetPoints())
+        end
+    end
+
+    local pointsContainer = playerContainer:Add("EditablePanel")
+    pointsContainer:Dock(TOP)
+    pointsContainer:SetTall(32)
+
+    local setPoints = pointsContainer:Add("PS_Button")
+    setPoints:Dock(LEFT)
+    setPoints:SetWide(120)
+    setPoints:SetText("Set Points: ")
+
+    local entry = pointsContainer:Add("DNumberWang")
+    entry:Dock(FILL)
+    entry:DockMargin(6, 0, 0, 0)
+    entry:SetTextColor(COLOR_WHITE)
+    entry:SetCursorColor(COLOR_WHITE)
+    entry:SetPaintBackground(false)
+    entry:SetFont("PS_Label")
+    entry:SetMinMax(0, 2147483647)
+    entry.Paint = function(this, w, h)
+        draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+        derma.SkinHook("Paint", "TextEntry", this, w, h)
+    end
+
+    selector.OnSelect = function(this, id, text, ply)
+        panel.Player = ply
+        avatar:SetPlayer(ply, 128)
+        entry:SetValue(ply:PS_GetPoints())
+    end
+
+    setPoints.DoClick = function(this)
+        local value = tonumber(entry:GetValue())
+        if not value or not IsValid(panel.Player) then return end
+
+        net.Start("PS_SetPoints")
+        net.WriteEntity(panel.Player)
+        net.WriteUInt(math.Clamp(value, 0, 2147483647), 32)
+        net.SendToServer()
     end
 end
 

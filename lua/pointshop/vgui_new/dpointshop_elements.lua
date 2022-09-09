@@ -49,8 +49,8 @@ function PANEL:Paint(w, h)
     else
         draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(self._dis))
     end
-    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._down), self._downA * self.ButtonDown))
     draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._hover), self._hoverA * self.MouseHover))
+    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._down), self._downA * self.ButtonDown))
 end
 
 function PANEL:PaintOver(w, h)
@@ -739,3 +739,216 @@ function PANEL:SetFillThemeColor(color_string)
 end
 
 vgui.Register("PS_HorizontalSlider", PANEL, "DNumSlider")
+
+PANEL = {}
+AccessorFunc(PANEL, "_border", "ThemeBorderColor", FORCE_STRING)
+AccessorFunc(PANEL, "_borderSize", "BorderSize", FORCE_NUMBER)
+AccessorFunc(PANEL, "m_bDoSort", "SortItems", FORCE_BOOL)
+
+function PANEL:Init()
+    self:SetThemeMainColor("Foreground1Color")
+    self:SetThemeHoverColor("MainColor", 255)
+    self:SetThemeBorderColor("MainColor")
+    self:SetBorderSize(3)
+    self:SetContentAlignment(4)
+    self:SetSortItems(true)
+
+    self:Clear()
+
+    self.ArrowMat = Material("lbg_pointshop/derma/expand_more.png", "noclamp smooth")
+    self:TDLib():On("PaintOver", function(this, w, h)
+        PS.ShadowedImage(this.ArrowMat, w - 8, h * 0.5, 20, 20, COLOR_WHITE, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+    end)
+end
+
+function PANEL:Paint(w, h)
+    if self:IsEnabled() then
+        draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(self._border))
+        draw_RoundedBox(self._borderSize, self._borderSize, self._borderSize, w - self._borderSize * 2, h - self._borderSize * 2, PS:GetThemeVar(self._main))
+    else
+        draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(self._dis))
+    end
+    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._hover), self._hoverA * self.MouseHover))
+    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._down), self._downA * self.ButtonDown))
+end
+
+function PANEL:Clear()
+    self:SetText("")
+    self.Choices = {}
+    self.Data = {}
+    self.ChoiceIcons = {}
+    self.Spacers = {}
+    self.selected = nil
+
+    if IsValid(self.Menu) then
+        self.Menu:Remove()
+    end
+end
+
+function PANEL:GetOptionText(id)
+    return self.Choices[id]
+end
+
+function PANEL:GetOptionData(id)
+    return self.Data[id]
+end
+
+function PANEL:GetOptionTextByData(data)
+    for id, dat in pairs(self.Data) do
+        if dat == data then
+            return self:GetOptionText(id)
+        end
+    end
+
+    -- Try interpreting it as a number
+    for id, dat in pairs(self.Data) do
+        if dat == tonumber(data) then
+        return self:GetOptionText(id)
+        end
+    end
+
+    -- In case we fail
+    return data
+end
+
+function PANEL:ChooseOption(value, index)
+    if IsValid(self.Menu) then
+        self.Menu:Remove()
+    end
+
+    self:SetText(value)
+    self.selected = index
+
+    self:OnSelect(index, value, self:GetOptionData(index))
+end
+
+function PANEL:ChooseOptionID(index)
+    local value = self:GetOptionText(index)
+    self:ChooseOption(value, index)
+end
+
+function PANEL:OnSelect(index, value, data)
+    -- For override
+end
+
+function PANEL:OnMenuOpened(menu)
+    -- For override
+end
+
+function PANEL:AddSpacer()
+    self.Spacers[#self.Choices] = true
+end
+
+function PANEL:AddChoice(value, data, select, icon)
+    local i = table.insert(self.Choices, value)
+    self.Data[i] = data
+    self.ChoiceIcons[i] = icon
+
+    if select then
+        self:ChooseOption(value, i)
+    end
+
+    return i
+end
+
+function PANEL:IsMenuOpen()
+    return IsValid(self.Menu)
+end
+
+function PANEL:OpenMenu(pControlOpener)
+    if pControlOpener and pControlOpener == self.TextEntry then
+        return
+    end
+
+    if #self.Choices == 0 then return end
+
+    if IsValid(self.Menu) then
+        self.Menu:Remove()
+    end
+
+    local parent = self
+    while IsValid(parent) and not parent:IsModal() do
+        parent = parent:GetParent()
+    end
+
+    if not IsValid(parent) then
+        parent = self
+    end
+
+    self.Menu = parent:Add("PS_DermaMenu")
+
+    local sorted = {}
+
+    for k, v in pairs(self.Choices) do
+        table.insert(sorted, { id = k, data = v, label = tostring(v) } )
+    end
+
+    local func = self:GetSortItems() and SortedPairsByMemberValue or pairs
+    for k, v in func(sorted, "label") do
+        local option = self.Menu:AddOption(v.data, function()
+            self:ChooseOption(v.data, v.id)
+        end)
+
+        if self.ChoiceIcons[v.id] then
+            option:SetIcon(self.ChoiceIcons[v.id])
+        end
+
+        if self.Spacers[v.id] then
+            self.Menu:AddSpacer()
+        end
+    end
+
+    local x, y = self:LocalToScreen(0, self:GetTall())
+    self.Menu:SetMinimumWidth(self:GetWide())
+    self.Menu:Open(x, y, false, self)
+
+    self:OnMenuOpened(self.Menu)
+end
+
+function PANEL:CloseMenu()
+    if IsValid(self.Menu) then
+        self.Menu:Remove()
+    end
+end
+
+function PANEL:SetValue(strValue)
+    self:SetText(strValue)
+end
+
+function PANEL:DoClick()
+    if self:IsMenuOpen() then
+        self:CloseMenu()
+    else
+        self:OpenMenu()
+    end
+end
+
+function PANEL:GetSelectedID()
+    return self.selected
+end
+
+vgui.Register("PS_ComboBox", PANEL, "PS_Button")
+
+PANEL = {}
+
+function PANEL:Paint(w, h)
+    draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+end
+
+function PANEL:AddOption(text, callback)
+    local button = self:Add("PS_Button")
+    button:SetText(text)
+    button:SetTall(32)
+    button:SetContentAlignment(4)
+    button.DoClick = callback
+
+    button:SetThemeMainColor("Foreground2Color")
+    button:SetThemeHoverColor("MainColor", 255)
+
+    self:AddPanel(button)
+    return button
+end
+
+
+
+vgui.Register("PS_DermaMenu", PANEL, "DMenu")

@@ -3,6 +3,8 @@
 	first file included serverside.
 ]]
 --
+resource.AddWorkshop("2860434667")
+
 include"sh_init.lua"
 include"sv_player_extension.lua"
 include"sv_manifest.lua"
