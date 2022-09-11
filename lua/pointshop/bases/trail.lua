@@ -70,6 +70,18 @@ function BASE:OnThink(ply, mods)
     end
 end
 
+function BASE:OnCustomizeSetup(panel, mods)
+    self:SetupThinker(panel, mods, {
+        colorMode = mods.colorMode, color = mods.color
+    }, function(a, b)
+        return not PS.TablesEqual(a, b)
+    end, function(reference, copy)
+        return table.Copy(reference)
+    end)
+
+    
+end
+
 function BASE:ColorFunction(trail, ply)
     local mods = ply:PS_GetModifiers(self.ID)
 

@@ -190,16 +190,28 @@ function PANEL:Init()
         end)
         PS:FadeHover(self.btnClose, "Foreground1Color", 125, 6, 6)
 
-    self.Settings = self:Add("DButton")
-    self.Settings.Mat = Material("lbg_pointshop/derma/settings.png", "noclamp smooth")
-    self.Settings:TDLib()
+    self.Settings = self:Add("PS_ButtonIcon")
+    self.Settings:SetIcon("lbg_pointshop/derma/settings.png", self.BarHeight, self.BarHeight)
+    self.Settings.DoClick = function()
+    end
+
+    self.Theme = self:Add("DButton")
+    self.Theme.DarkMat = Material("lbg_pointshop/derma/dark_mode.png", "noclamp smooth")
+    self.Theme.LightMat = Material("lbg_pointshop/derma/light_mode.png", "noclamp smooth")
+    self.Theme:TDLib()
         :ClearPaint()
         :Text("")
-        :On("PaintOver", function(this, w, h) PS.ShadowedImage(this.Mat, 0, 0, w, h) end)
+        :SetupTransition("DarkTheme", 6, function() return PS.ActiveTheme == "default" end)
+        :SetupTransition("LightTheme", 6, function() return PS.ActiveTheme == "dark" end)
         :On("DoClick", function(this)
             self:SetTheme(PS.ActiveTheme == "default" and "dark" or "default")
         end)
-    PS:FadeHover(self.Settings, "Foreground1Color", 125, 6, 6)
+        :On("PaintOver", function(this, w, h)
+            PS.ShadowedImage(this.DarkMat, 0, 0, w, h, Color(255, 255, 255, 255 * this.DarkTheme))
+            PS.ShadowedImage(this.LightMat, 0, 0, w, h, Color(255, 255, 255, 255 * this.LightTheme))
+        end)
+        PS:FadeHover(self.Theme, "Foreground1Color", 125, 6, 6)
+
 
     -- Left bar
     self.Left = self:Add("DPanel")
@@ -584,6 +596,8 @@ function PANEL:PerformLayout()
 
     self.Settings:SetPos(w - self.BarHeight * 2, 0)
     self.Settings:SetSize(self.BarHeight, self.BarHeight)
+    self.Theme:SetPos(w - self.BarHeight * 3, 0)
+    self.Theme:SetSize(self.BarHeight, self.BarHeight)
 end
 
 function PANEL:Paint(w, h)
