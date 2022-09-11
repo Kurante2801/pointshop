@@ -51,15 +51,8 @@ function ENT:Think()
         self.ShouldDraw = false
     elseif owner == LocalPlayer() then
         self.ShouldDraw = true
-    elseif true then
-    --elseif PS.TrailsEnabled then
-        if GAMEMODE.FolderName == "hideandseek" and owner:Team() ~= LocalPlayer():Team() then
-            self.ShouldDraw = false
-        else
-            self.ShouldDraw = true
-        end
     else
-        self.ShouldDraw = false
+        self.ShouldDraw = PS:CanSeeTrail(owner)
     end
 
     if not self.ShouldDraw then return end

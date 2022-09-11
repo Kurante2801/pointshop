@@ -114,7 +114,7 @@ function BASE:OnCustomizeSetup(panel, mods)
     end)
 
     if self.Skins and #self.Skins > 1 then
-        self:AddSelector(panel, "Skin", mods.skin or self.Skins[1], self.Skins, function(value)
+        PS.AddSelector(panel, "Skin", mods.skin or self.Skins[1], self.Skins, function(value)
             mods.skin = value
         end)
     end
@@ -122,7 +122,7 @@ function BASE:OnCustomizeSetup(panel, mods)
     if self.Bodygroups then
         for _, group in ipairs(self.Bodygroups) do
             if #group.values > 1 then
-                self:AddSelector(panel, group.name, mods.bodygroups[group.id] or group.values[0], group.values, function(value)
+                PS.AddSelector(panel, group.name, mods.bodygroups[group.id] or group.values[0], group.values, function(value)
                     mods.bodygroups[group.id] = value
                 end)
             end

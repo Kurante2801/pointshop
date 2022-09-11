@@ -881,13 +881,13 @@ function PANEL:OpenMenu(pControlOpener)
     local sorted = {}
 
     for k, v in pairs(self.Choices) do
-        table.insert(sorted, { id = k, data = v, label = tostring(v) } )
+        table.insert(sorted, { id = k, data = self.Data[k], label = tostring(v) } )
     end
 
     local func = self:GetSortItems() and SortedPairsByMemberValue or pairs
     for k, v in func(sorted, "label") do
-        local option = self.Menu:AddOption(v.data, function()
-            self:ChooseOption(v.data, v.id)
+        local option = self.Menu:AddOption(v.label, function()
+            self:ChooseOption(v.label or "", v.id)
         end)
 
         if self.ChoiceIcons[v.id] then

@@ -167,26 +167,26 @@ function BASE:OnCustomizeSetup(panel, mods)
         }
     end)
 
-    self:AddSlider(panel, "Position X", mods.pos.x, self.PositionMinMax[1], self.PositionMinMax[2], 0.5, function(value)
+    PS.AddSlider(panel, "Position X", mods.pos.x, self.PositionMinMax[1], self.PositionMinMax[2], 0.5, function(value)
         mods.pos.x = value
     end)
-    self:AddSlider(panel, "Position Y", mods.pos.y, self.PositionMinMax[1], self.PositionMinMax[2], 0.5, function(value)
+    PS.AddSlider(panel, "Position Y", mods.pos.y, self.PositionMinMax[1], self.PositionMinMax[2], 0.5, function(value)
         mods.pos.y = value
     end)
-    self:AddSlider(panel, "Position Z", mods.pos.z, self.PositionMinMax[1], self.PositionMinMax[2], 0.5, function(value)
+    PS.AddSlider(panel, "Position Z", mods.pos.z, self.PositionMinMax[1], self.PositionMinMax[2], 0.5, function(value)
         mods.pos.z = value
     end):DockMargin(0, 0, 0, 32)
-    self:AddSlider(panel, "Angle P", mods.ang.p, -180, 180, 0.5, function(value)
+    PS.AddSlider(panel, "Angle P", mods.ang.p, -180, 180, 0.5, function(value)
         mods.ang.x = value
     end)
-    self:AddSlider(panel, "Angle Y", mods.ang.y, -180, 180, 0.5, function(value)
+    PS.AddSlider(panel, "Angle Y", mods.ang.y, -180, 180, 0.5, function(value)
         mods.ang.y = value
     end)
-    self:AddSlider(panel, "Angle R", mods.ang.r, -180, 180, 0.5, function(value)
+    PS.AddSlider(panel, "Angle R", mods.ang.r, -180, 180, 0.5, function(value)
         mods.ang.z = value
     end):DockMargin(0, 0, 0, 32)
 
-    self:AddSlider(panel, "Scale", mods.scale, self.ScaleMinMax[1], self.ScaleMinMax[2], 0.05, function(value)
+    PS.AddSlider(panel, "Scale", mods.scale, self.ScaleMinMax[1], self.ScaleMinMax[2], 0.05, function(value)
         mods.scale = value
     end):SetDefaultValue(1)
 end
@@ -220,8 +220,7 @@ function BASE:OnPanelPaint(panel)
 end
 
 function BASE:OnPlayerDraw(ply, flags, ent, mods)
-    if self:GamemodeCheck() or not self.Props or not PS.ClientsideModels[ply] then return end
-
+    if self:GamemodeCheck() or not self.Props or not PS.ClientsideModels[ply] or not PS:CanSeeAccessory(ply) then return end
     local models = PS.ClientsideModels[ply]
     if not models or not models[self.ID] then return end
 

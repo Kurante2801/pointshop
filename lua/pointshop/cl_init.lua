@@ -21,6 +21,56 @@ PS.ShopMenu = nil
 PS.ClientsideModels = PS.ClientsideModels or {}
 PS.HoverModel = nil
 PS.HoverModelClientsideModel = nil
+
+PS.AccessoryVisibility = CreateClientConVar("ps_accessoryvisibility", "1", true, true, "Who can see your accessories? 1 = Everyone; 2 = Same Team Only; 3 = Friends Only", 1, 3)
+PS.AccessoryEnabled = CreateClientConVar("ps_accessoryenabled", "1", true, true, "What accessories can you see? 1 = Everyone; 2 = Same Team Only; 3 = Friends Only", 1, 3)
+
+PS.TrailVisibility = CreateClientConVar("ps_trailvisibility", "1", true, true, "Who can see your trails? 1 = Everyone; 2 = Same Team Only; 3 = Friends Only", 1, 3)
+PS.TrailEnabled = CreateClientConVar("ps_trailenabled", "1", true, true, "What trails can you see? 1 = Everyone; 2 = Same Team Only; 3 = Friends Only", 1, 3)
+
+local enabled, visibility
+function PS:CanSeeAccessory(target)
+    local ply = LocalPlayer()
+    if target == ply then return true end
+
+    enabled = self.AccessoryEnabled:GetInt()
+    if enabled == 2 and ply:Team() ~= target:Team() then
+        return false
+    elseif enabled == 3 and target:GetFriendStatus() ~= "friend" then
+        return false
+    end
+
+    visibility = target:GetNWInt("ps_accessoryvisibility", 3)
+    if visibility == 2 and ply:Team() ~= target:Team() then
+        return false
+    elseif visibility == 3 and target:GetFriendStatus() ~= "friend" then
+        return false
+    end
+
+    return true
+end
+
+function PS:CanSeeTrail(target)
+    local ply = LocalPlayer()
+    if target == ply then return true end
+
+    enabled = self.TrailEnabled:GetInt()
+    if enabled == 2 and ply:Team() ~= target:Team() then
+        return false
+    elseif enabled == 3 and target:GetFriendStatus() ~= "friend" then
+        return false
+    end
+
+    visibility = target:GetNWInt("ps_trailvisibility", 3)
+    if visibility == 2 and ply:Team() ~= target:Team() then
+        return false
+    elseif visibility == 3 and target:GetFriendStatus() ~= "friend" then
+        return false
+    end
+
+    return true
+end
+
 local invalidplayeritems = {}
 
 -- menu stuff
@@ -202,5 +252,23 @@ hook.Add("PostDrawTranslucentRenderables", "PS_PlayerDraw", function(_, skybox)
 end)
 
 hook.Add("ShutDown", "PS_WebMaterialsCleanup", function()
---    for _, 
+    local files, _ = file.Find("lbg_pointshop_webmaterials/*", "DATA")
+    for _, filename in ipairs(files) do
+        file.Delete("lbg_pointshop_webmaterials/" .. filename)
+    end
+end)
+
+hook.Add("InitPostEntity", "PS_VisibilityNetwork", function()
+    net.Start("PS_SetNetworkVisibility")
+    net.SendToServer()
+end)
+
+cvars.AddChangeCallback("ps_accessoryvisibility", function()
+    net.Start("PS_SetNetworkVisibility")
+    net.SendToServer()
+end)
+
+cvars.AddChangeCallback("ps_trailvisibility", function()
+    net.Start("PS_SetNetworkVisibility")
+    net.SendToServer()
 end)

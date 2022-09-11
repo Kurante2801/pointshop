@@ -129,6 +129,11 @@ net.Receive('PS_TakeItem', function(length, ply)
     end
 end)
 
+net.Receive("PS_SetNetworkVisibility", function(_, ply)
+    ply:SetNWInt("ps_accessoryvisibility", ply:GetInfoNum("ps_accessoryvisibility", 1))
+    ply:SetNWInt("ps_trailvisibility", ply:GetInfoNum("ps_trailvisibility", 1))
+end)
+
 -- hooks
 -- Ability to use any button to open pointshop.
 hook.Add("PlayerButtonDown", "PS_ToggleKey", function(ply, btn)
@@ -192,6 +197,7 @@ util.AddNetworkString('PS_RemoveClientsideModel')
 util.AddNetworkString('PS_SendClientsideModels')
 util.AddNetworkString('PS_SendNotification')
 util.AddNetworkString('PS_ToggleMenu')
+util.AddNetworkString('PS_SetNetworkVisibility')
 
 -- console commands
 concommand.Add(PS.Config.ShopCommand, function(ply, cmd, args)
