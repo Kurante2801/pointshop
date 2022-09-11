@@ -39,3 +39,15 @@ end
 function Player:PS_GetModifiers(id)
     return (self.PS_Items and self.PS_Items[id]) and self.PS_Items[id].Modifiers or {}
 end
+
+function Player:PS_GetItemsEquippedFromCategory(cat)
+    local items = {}
+    for item_id, item in pairs(self.PS_Items) do
+        local ITEM = PS.Items[item_id]
+        if ITEM.Category == cat and item.Equipped then
+            items[item_id] = item
+        end
+    end
+
+    return items
+end
