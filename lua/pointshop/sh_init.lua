@@ -124,7 +124,7 @@ function PS:RegisterCategory(category)
 end
 
 PS.BaseCategory = {
-    Name = "", Icon = "", Order = 0,
+    Name = "", Icon = "", Order = 20,
     AllowedEquipped = -1, AllowedUserGroups = {},
     CanPlayerSee = function() return true end,
 }

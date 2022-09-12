@@ -1072,6 +1072,8 @@ function PANEL:MakeSettingsPanel(panel)
     PS.AddComboBox(panel, "What trails can you see?", values[PS.TrailEnabled:GetInt()], values, { 1, 2, 3 }, function(_, data)
         PS.TrailEnabled:SetInt(data)
     end).ComboBox:SetSortItems(false)
+
+    hook.Run("PS_SettingsPanel", panel)
 end
 
 function PANEL:MakeAdminPanel(panel)
