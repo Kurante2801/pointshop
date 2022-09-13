@@ -72,11 +72,6 @@ function ENT:Think()
     local stop = Angle(0, owner:GetAngles().y, 0)
     self:SetAngles(LerpAngle(self.AngleWeight, stop, move))
 
-    if SERVER then
-        self:NextThink(CurTime())
-        return true
-    end
-
     -- Draw CS Model
     if not IsValid(self.CSModel) then
         self.CSModel = ClientsideModel(self.Item.Model, RENDERGROUP_BOTH)
@@ -97,11 +92,6 @@ function ENT:Think()
         data:SetEntity(self)
         data:SetScale(1)
         util.Effect(self.Item.Particles, data)
-    end
-
-    if owner == LocalPlayer() then
-        self:SetNextClientThink(CurTime())
-        return true
     end
 end
 
