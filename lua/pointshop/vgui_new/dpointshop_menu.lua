@@ -1073,6 +1073,14 @@ function PANEL:MakeSettingsPanel(panel)
         PS.TrailEnabled:SetInt(data)
     end).ComboBox:SetSortItems(false)
 
+    PS.AddComboBox(panel, "Who can see your followers?", values[PS.FollowerVisibility:GetInt()], values, { 1, 2, 3 }, function(_, data)
+        PS.FollowerVisibility:SetInt(data)
+    end).ComboBox:SetSortItems(false)
+
+    PS.AddComboBox(panel, "What followers can you see?", values[PS.FollowerEnabled:GetInt()], values, { 1, 2, 3 }, function(_, data)
+        PS.FollowerEnabled:SetInt(data)
+    end).ComboBox:SetSortItems(false)
+
     hook.Run("PS_SettingsPanel", panel)
 end
 

@@ -132,6 +132,7 @@ end)
 net.Receive("PS_SetNetworkVisibility", function(_, ply)
     ply:SetNWInt("ps_accessoryvisibility", ply:GetInfoNum("ps_accessoryvisibility", 1))
     ply:SetNWInt("ps_trailvisibility", ply:GetInfoNum("ps_trailvisibility", 1))
+    ply:SetNWInt("ps_followervisibility", ply:GetInfoNum("ps_followervisibility", 1))
 end)
 
 -- hooks

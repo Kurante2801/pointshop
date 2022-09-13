@@ -28,6 +28,9 @@ PS.AccessoryEnabled = CreateClientConVar("ps_accessoryenabled", "1", true, true,
 PS.TrailVisibility = CreateClientConVar("ps_trailvisibility", "1", true, true, "Who can see your trails? 1 = Everyone; 2 = Same Team Only; 3 = Friends Only", 1, 3)
 PS.TrailEnabled = CreateClientConVar("ps_trailenabled", "1", true, true, "What trails can you see? 1 = Everyone; 2 = Same Team Only; 3 = Friends Only", 1, 3)
 
+PS.FollowerVisibility = CreateClientConVar("ps_followervisibility", "1", true, true, "Who can see your followers? 1 = Everyone; 2 = Same Team Only; 3 = Friends Only", 1, 3)
+PS.FollowerEnabled = CreateClientConVar("ps_followerenabled", "1", true, true, "What followers can you see? 1 = Everyone; 2 = Same Team Only; 3 = Friends Only", 1, 3)
+
 local enabled, visibility
 function PS:CanSeeAccessory(target)
     local ply = LocalPlayer()
@@ -62,6 +65,27 @@ function PS:CanSeeTrail(target)
     end
 
     visibility = target:GetNWInt("ps_trailvisibility", 3)
+    if visibility == 2 and ply:Team() ~= target:Team() then
+        return false
+    elseif visibility == 3 and target:GetFriendStatus() ~= "friend" then
+        return false
+    end
+
+    return true
+end
+
+function PS:CanSeeFollower(target)
+    local ply = LocalPlayer()
+    if target == ply then return true end
+
+    enabled = self.FollowerEnabled:GetInt()
+    if enabled == 2 and ply:Team() ~= target:Team() then
+        return false
+    elseif enabled == 3 and target:GetFriendStatus() ~= "friend" then
+        return false
+    end
+
+    visibility = target:GetNWInt("ps_followervisibility", 3)
     if visibility == 2 and ply:Team() ~= target:Team() then
         return false
     elseif visibility == 3 and target:GetFriendStatus() ~= "friend" then
@@ -269,6 +293,11 @@ cvars.AddChangeCallback("ps_accessoryvisibility", function()
 end)
 
 cvars.AddChangeCallback("ps_trailvisibility", function()
+    net.Start("PS_SetNetworkVisibility")
+    net.SendToServer()
+end)
+
+cvars.AddChangeCallback("ps_followervisibility", function()
     net.Start("PS_SetNetworkVisibility")
     net.SendToServer()
 end)
