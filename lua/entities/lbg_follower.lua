@@ -57,6 +57,7 @@ function ENT:Think()
         endpos = targetPos,
         filter = owner
     })
+
     targetPos = tr.HitPos + Vector(0, 0, 1) * math.sin(CurTime() * 1.5) * 4
     local pos = targetPos - self:GetPos()
     local velocity = math.Clamp(pos:Length(), 0, 150)
@@ -66,11 +67,13 @@ function ENT:Think()
     -- Angles
     velocity = self:GetVelocity()
     local speed = velocity:LengthSqr() * 0.0005
-    self.AngleWeight = math.Approach(self.AngleWeight, speed > 2.5 and 1 or 0, FrameTime() * (speed > 2.5 and 3 or 2.5))
+    self.AngleWeight = math.Approach(self.AngleWeight, speed > 1.5 and 1 or 0, FrameTime() * (speed > 2.5 and 3 or 2.5))
 
     local move = Angle(0, velocity:Angle().y, 0)
     local stop = Angle(0, owner:GetAngles().y, 0)
     self:SetAngles(LerpAngle(self.AngleWeight, stop, move))
+
+    if not CLIENT then return end
 
     -- Draw CS Model
     if not IsValid(self.CSModel) then
@@ -92,6 +95,11 @@ function ENT:Think()
         data:SetEntity(self)
         data:SetScale(1)
         util.Effect(self.Item.Particles, data)
+    end
+
+    if owner == LocalPlayer() then
+        self:NextThink(CurTime())
+        return true
     end
 end
 
