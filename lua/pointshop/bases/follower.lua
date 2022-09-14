@@ -34,4 +34,13 @@ function BASE:ModifyClientsideModel(ply, model, pos, ang)
     return pos, ang
 end
 
+function BASE:OnModelInitialize(ply, ent, model)
+end
+
+function BASE:OnModelThink(ply, ent, model)
+end
+
+function ITEM:OnPreModelDraw(ply, ent, model)
+end
+
 return PS:RegisterBase(BASE)

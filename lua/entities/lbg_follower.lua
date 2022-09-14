@@ -79,11 +79,16 @@ function ENT:Think()
     if not IsValid(self.CSModel) then
         self.CSModel = ClientsideModel(self.Item.Model, RENDERGROUP_BOTH)
         self.CSModel:SetParent(self)
+        self.CSModel:SetNoDraw(true)
+        self.CSModel:DrawShadow(false)
+        self.CSModel:DestroyShadow()
+        self.Item:OnModelInitialize(owner, self, self.CSModel)
     end
 
     pos, ang = self.Item:ModifyClientsideModel(owner, self.CSModel, self:GetPos(), self:GetAngles())
     self.CSModel:SetPos(pos)
     self.CSModel:SetAngles(ang)
+    self.Item:OnModelThink(owner, self, self.CSModel)
 
     -- Particle System
     if self.Item.Particles and not self.Effect then
@@ -108,4 +113,7 @@ function ENT:OnRemove()
 end
 
 function ENT:Draw()
+    if not self.Item or not IsValid(self.CSModel) then return end
+    self.Item:OnPreModelDraw(owner, self, self.CSModel)
+    self.CSModel:DrawModel()
 end
