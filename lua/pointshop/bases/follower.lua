@@ -30,6 +30,14 @@ function BASE:OnHolster(ply)
     PS.Followers[ply][self.ID] = nil
 end
 
+function BASE:OnSpawn(ply, mods)
+    self:OnEquip(ply, mods)
+end
+
+function BASE:OnDeath(ply)
+    self:OnHolster(ply)
+end
+
 function BASE:ModifyClientsideModel(ply, model, pos, ang)
     return pos, ang
 end
@@ -40,7 +48,7 @@ end
 function BASE:OnModelThink(ply, ent, model)
 end
 
-function ITEM:OnPreModelDraw(ply, ent, model)
+function BASE:OnPreModelDraw(ply, ent, model)
 end
 
 return PS:RegisterBase(BASE)
