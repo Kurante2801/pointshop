@@ -90,13 +90,6 @@ function ENT:Think()
         end
     end
 
-    -- Update color
-    if self:GetItemID() ~= "" then
-        PS.Items[self:GetItemID()]:ColorFunction(self, owner)
-    else
-        self:ColorFunction(owner)
-    end
-
     -- Update material
     if self.MaterialPath ~= self:GetMaterialPath() then
         self.MaterialPath = self:GetMaterialPath()
@@ -110,6 +103,14 @@ function ENT:DrawTranslucent()
 
     local len = #self.Segments
     if len < 2 then return end
+
+    -- Update color
+    local owner = self:GetOwner()
+    if self:GetItemID() ~= "" then
+        PS.Items[self:GetItemID()]:ColorFunction(self, owner)
+    else
+        self:ColorFunction(owner)
+    end
 
     render.SetMaterial(self.Material)
     render.StartBeam(len)

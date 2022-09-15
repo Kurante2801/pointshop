@@ -953,10 +953,253 @@ end
 vgui.Register("PS_DermaMenu", PANEL, "DMenu")
 
 PANEL = {}
+AccessorFunc(PANEL, "_alpha", "AlphaAllowed", FORCE_BOOL)
 
 function PANEL:Init()
-    self.ColorPreview = self:Add("DPanel")
-    self.ColorPreview:Dock(LEFT)
+    self:SetWide(150)
+
+    self.Button = self:Add("DButton")
+    self.Button:TDLib()
+        :ClearPaint()
+        :Text("")
+        :On("Paint", function(this, w, h)
+            -- Outline
+            if self:IsDark() then
+                surface.SetDrawColor(255, 255, 255, 255)
+            else
+                surface.SetDrawColor(0, 0, 0, 255)
+            end
+            surface.DrawRect(0, 0, w, h)
+
+            -- Transparency things
+            local half_w, half_h = w * 0.5, h * 0.5
+            surface.SetDrawColor(255, 255, 255, 255)
+            surface.DrawRect(2, 2, half_w - 2, half_h - 2)
+            surface.DrawRect(half_w, half_w, half_w - 2, half_h - 2)
+            surface.SetDrawColor(200, 200, 200)
+            surface.DrawRect(half_w, 2, half_w - 2, half_h - 2)
+            surface.DrawRect(2, half_h, half_w - 2, half_h - 2)
+
+            -- Color
+            local color = self:GetValue()
+            surface.SetDrawColor(color.r, color.g, color.b, color.a)
+            surface.DrawRect(2, 2, w - 4, h - 4)
+        end)
+        :On("DoClick", function(this)
+            local picker = vgui.Create("PS_ColorModal")
+            picker:Open()
+            picker:SetValue(self:GetValue(), self:GetAlphaAllowed())
+            picker.OnValueChanged = function(_, value)
+                self:SetValue(value, self:GetAlphaAllowed())
+                self:OnValueChanged(self:GetValue())
+            end
+        end)
+
+    self.TextArea = self:Add("DTextEntry")
+    self.TextArea:SetFont("PS_Label")
+    self.TextArea:SetTextColor(COLOR_WHITE)
+    self.TextArea:SetCursorColor(COLOR_WHITE)
+    self.TextArea:SetPaintBackground(false)
+    self.TextArea.OnValueChange = function(this, value)
+        self:SetValue(PS.HEXtoRGB(value, self:GetAlphaAllowed()), self:GetAlphaAllowed())
+        self:OnValueChanged(self:GetValue())
+    end
+
+    self:SetValue(Color(0, 255, 255, 255), true)
 end
 
-vgui.Register("PS_ColorSelector", PANEL, "PS_Button")
+function PANEL:Paint(w, h)
+    draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+end
+
+function PANEL:PerformLayout(w, h)
+    self.Button:SetSize(h - 8, h - 8)
+    self.Button:SetPos(4, h * 0.5 - self.Button:GetTall() * 0.5)
+
+    local wide = self.Button:GetWide() + 8
+    self.TextArea:SetSize(w - wide, h)
+    self.TextArea:SetPos(wide, 0)
+end
+
+function PANEL:SetValue(color, allowAlpha)
+    if not allowAlpha then
+        color.a = 255
+    end
+
+    self:SetAlphaAllowed(allowAlpha)
+    self._color = color
+    self._dark = self:GetDark(color)
+
+    self.TextArea:SetText("##" .. PS.RGBtoHEX(color, allowAlpha))
+end
+
+function PANEL:GetValue(color)
+    if not self._alpha then
+        self._color.a = 255
+    end
+
+    return self._color
+end
+
+function PANEL:GetDark(color)
+    local _, _, v = Color(color.r, color.g, color.b):ToHSV()
+    return v < 0.5
+end
+
+function PANEL:IsDark(color)
+    return self._dark
+end
+
+function PANEL:OnValueChanged(value)
+end
+
+vgui.Register("PS_ColorPicker", PANEL, "EditablePanel")
+
+PANEL = {}
+AccessorFunc(PANEL, "m_UpdateOnChange", "UpdateOnChange", FORCE_BOOL)
+AccessorFunc(PANEL, "m_bIsMenuComponent", "IsMenu")
+AccessorFunc(PANEL, "m_bDeleteSelf", "DeleteSelf")
+AccessorFunc(PANEL, "_alpha", "AlphaAllowed")
+
+PANEL:SetIsMenu(true)
+PANEL:SetDeleteSelf(true)
+PANEL:SetAlphaAllowed(true)
+
+function PANEL:Init()
+    RegisterDermaMenuForClose(self)
+    self:DockPadding(6, 6, 6, 6)
+
+    self.Mixer = self:Add("DColorMixer")
+    self.Mixer:Dock(FILL)
+    self.Mixer:SetPalette(false)
+    self.Mixer.WangsPanel:SetWide(76)
+    self.Mixer.ValueChanged = function(this, color)
+        if this.notuserchange then return end
+
+        self:SetValue(color, self:GetAlphaAllowed())
+    end
+
+    local keys = { "txtR", "txtG", "txtB", "txtA" }
+    for i, key in ipairs(keys) do
+        local wang = self.Mixer[key]
+        wang.m_bIsMenuComponent = true
+        wang:DockMargin(24, 0, 0, 6)
+        wang:SetPaintBackground(false)
+        wang:SetFont("PS_Label")
+        wang:SetTall(24)
+        wang:SetTextColor(COLOR_WHITE)
+        wang:SetCursorColor(COLOR_WHITE)
+        wang.Paint = function(this, w, h)
+            draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+            derma.SkinHook("Paint", "TextEntry", this, w, h)
+        end
+    end
+
+    self.Accept = self.Mixer.WangsPanel:Add("PS_Button")
+    self.Accept:Dock(BOTTOM)
+    self.Accept:DockMargin(8, 8, 8, 8)
+    self.Accept:SetTall(60)
+    self.Accept:SetText("")
+    self.Accept:SetThemeMainColor("Foreground1Color")
+    self.Accept:SetThemeHoverColor("MainColor", 255)
+    self.Accept:On("Paint", function(this, w, h)
+        -- Outline
+        if self:IsDark() then
+            surface.SetDrawColor(255, 255, 255, 255)
+        else
+            surface.SetDrawColor(0, 0, 0, 255)
+        end
+        surface.DrawRect(6, 6, w - 12, h - 12)
+
+        -- Transparency things
+        local half_w, half_h = w * 0.5, h * 0.5
+        surface.SetDrawColor(255, 255, 255, 255)
+        surface.DrawRect(8, 8, half_w - 8, half_h - 8)
+        surface.DrawRect(half_w, half_w, half_w - 8, half_h - 8)
+        surface.SetDrawColor(200, 200, 200)
+        surface.DrawRect(half_w, 8, half_w - 8, half_h - 8)
+        surface.DrawRect(8, half_h, half_w - 8, half_h - 8)
+
+        -- Color
+        local color = self:GetValue()
+        surface.SetDrawColor(color.r, color.g, color.b, color.a)
+        surface.DrawRect(8, 8, w - 16, h - 16)
+    end):On("DoClick", function()
+        self:OnValueChanged(self:GetValue())
+        CloseDermaMenus()
+    end)
+end
+
+local red = Color(255, 0, 0)
+local green = Color(0, 255, 0)
+local blue = Color(0, 0, 255)
+
+function PANEL:Paint(w, h)
+    draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground2Color"))
+
+    PS.ShadowedText("R", "PS_Label", w - 80, 8, red)
+    PS.ShadowedText("G", "PS_Label", w - 80, 38, green)
+    PS.ShadowedText("B", "PS_Label", w - 80, 68, blue)
+
+    if self:GetAlphaAllowed() then
+        PS.ShadowedText("A", "PS_Label", w - 80, 98, COLOR_WHITE)
+    end
+
+    draw_RoundedBox(0, w - 71, 133, 50, 50, Color(255, 0, 0))
+end
+
+function PANEL:Open(x, y)
+    local w, h = self:GetSize()
+
+    if not x then
+        x, y = input.GetCursorPos()
+    end
+
+    x = math.Clamp(x, 1, ScrW() - w)
+    y = math.Clamp(y, 1, ScrH() - h)
+
+    self:SetPos(x, y)
+    self:MakePopup()
+    self:MoveToFront()
+end
+
+function PANEL:SetValue(color, allowAlpha)
+    if not allowAlpha then
+        color.a = 255
+    end
+
+    self:SetAlphaAllowed(allowAlpha)
+    self._color = color
+    self._dark = self:GetDark(color)
+
+    self.Mixer.txtA:SetVisible(allowAlpha)
+    self.Mixer.Alpha:SetVisible(allowAlpha)
+
+    self.Mixer.notuserchange = true
+    self.Mixer:SetColor(color)
+    self.Mixer.notuserchange = nil
+
+    self:SetSize(allowAlpha and 340 or 310, 200)
+end
+
+function PANEL:GetValue(color)
+    if not self._alpha then
+        self._color.a = 255
+    end
+
+    return self._color
+end
+
+function PANEL:GetDark(color)
+    local _, _, v = Color(color.r, color.g, color.b):ToHSV()
+    return v < 0.5
+end
+
+function PANEL:IsDark(color)
+    return self._dark
+end
+
+function PANEL:OnValueChanged(color)
+end
+
+vgui.Register("PS_ColorModal", PANEL, "EditablePanel")
