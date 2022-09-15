@@ -3,7 +3,7 @@ BASE.ID = "trail"
 BASE.Material = "trails/laser"
 BASE.Modify = true
 BASE.Color = Color(255, 255, 255)
-BASE.Colorable = true
+BASE.PlayerColorable = true -- Can trail color be the same as PLAYER:GetPlayerColor
 
 BASE.StartWidth = 15
 BASE.EndWidth = 0
@@ -71,6 +71,8 @@ function BASE:OnThink(ply, mods)
 end
 
 function BASE:OnCustomizeSetup(panel, mods)
+    mods.color = mods.color or "#FFFFFF"
+
     self:SetupThinker(panel, mods, {
         colorMode = mods.colorMode, color = mods.color
     }, function(a, b)
@@ -79,12 +81,57 @@ function BASE:OnCustomizeSetup(panel, mods)
         return table.Copy(reference)
     end)
 
-    
+    PS.AddColorSelector(panel, "Trail Color", mods.color, function(value)
+        mods.color = value
+    end)
 end
+
+function PS.AddColorSelector(panel, text, value, callback)
+    local container = panel:Add("EditablePanel")
+    container:Dock(TOP)
+    container:DockMargin(0, 0, 0, 6)
+    container:SetTall(32)
+
+    container.header = container:Add("PS_Button")
+    container.header:Dock(LEFT)
+    container.header:DockMargin(0, 0, 6, 0)
+    container.header:SetWide(180)
+    container.header:SetText(text)
+    container.header:SetMouseInputEnabled(false)
+    container.header:SetThemeMainColor("Foreground1Color")
+end
+
+function BASE:SanitizeTable(mods)
+    if not self.Modify or not mods.color or not isstring(mods.color) then return {} end
+
+    local color = mods.color
+    if color == "player" and not self.PlayerColorable then return {} end
+
+    return { color = PS.SanitizeHEX(color, true) }
+end
+
+PS.TrailColorsCache = PS.TrailColorCache or {}
 
 function BASE:ColorFunction(trail, ply)
     local mods = ply:PS_GetModifiers(self.ID)
 
+    if not self.Modify or not isstring(mods.color) then
+        surface.SetDrawColor(255, 255, 255, 255)
+        return
+    end
+
+    if self.PlayerColorable and mods.color == "player" then
+        local color = ply:GetPlayerColor() -- Not using :ToColor since I don't need a table here
+        surface.SetDrawColor(color.x * 255, color.y * 255, color.z * 255)
+        return
+    end
+
+    if not PS.TrailColorsCache[mods.color] then
+        PS.TrailColorsCache = PS.HEXtoRGB(mods.color, true)
+    end
+
+    local color = PS.TrailColorsCache[mods.color]
+    surface.SetDrawColor(color.r, color.g, color.b, color.a)
 end
 
 return PS:RegisterBase(BASE)

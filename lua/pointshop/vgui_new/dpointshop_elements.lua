@@ -950,6 +950,13 @@ function PANEL:AddOption(text, callback)
     return button
 end
 
-
-
 vgui.Register("PS_DermaMenu", PANEL, "DMenu")
+
+PANEL = {}
+
+function PANEL:Init()
+    self.ColorPreview = self:Add("DPanel")
+    self.ColorPreview:Dock(LEFT)
+end
+
+vgui.Register("PS_ColorSelector", PANEL, "PS_Button")

@@ -390,78 +390,45 @@ PS.ValidHEX = {
     ["9"] = true,
 }
 
-PS.SanitizeHEX = function(hex)
+PS.SanitizeHEX = function(hex, parseAlpha)
     -- If given invalid, return white
-    if not hex or not isstring(hex) then return "FFFFFF" end
+    if not hex or not isstring(hex) then return parseAlpha and "FFFFFFFF" or "FFFFFF" end
     -- Remove # if it has one and make all uppercase
-    hex = string.Replace(hex, "#", "")
-    hex = string.upper(hex)
+    hex = string.upper(string.Replace(hex, "#", ""))
 
+    local length = parseAlpha and 8 or 6
     -- Now we check if the string is using an unvalid char.
-    for i = 1, 6 do
+    for i = 1, length do
         -- We are checking if the character is on the ValidHex table. Otherwise replace with an F
         if not PS.ValidHEX[hex[i]] then
             -- Strings in lua are inmutable, so we do some fuckery to create a new one
             hex = string.format("%s%s%s", string.sub(hex, 1, i - 1), "F", string.sub(hex, i + 1))
         end
     end
-
-    -- Limit to 6 chars
-    if #hex > 6 then
-        hex = string.sub(hex, 1, 6)
+    -- Limit to 6 or 8 chars
+    if #hex > length then
+        hex = string.sub(hex, 1, length)
     end
 
     return hex
 end
 
--- Returns a valid HEX string
-PS.SanitizeHEX = function(hex)
-    -- If given invalid, return white
-    if not hex or not isstring(hex) then return "FFFFFF" end
-    -- Remove # if it has one and make all uppercase
-    hex = string.Replace(hex, "#", "")
-    hex = string.upper(hex)
-
-    -- Now we check if the string is using an unvalid char.
-    for i = 1, 6 do
-        -- We are checking if the character is on the ValidHex table. Otherwise replace with an F
-        if not PS.ValidHEX[hex[i]] then
-            -- Strings in lua are inmutable, so we do some fuckery to create a new one
-            hex = string.format("%s%s%s", string.sub(hex, 1, i - 1), "F", string.sub(hex, i + 1))
-        end
-    end
-
-    -- Limit to 6 chars
-    if #hex > 6 then
-        hex = string.sub(hex, 1, 6)
-    end
-
-    return hex
-end
-
-PS.HEXtoRGB = function(hex)
-    hex = PS.SanitizeHEX(hex)
+PS.HEXtoRGB = function(hex, parseAlpha)
+    hex = PS.SanitizeHEX(hex, parseAlpha)
     -- Separate RRGGBB
-    local r, g, b = string.sub(hex, 1, 2), string.sub(hex, 3, 4), string.sub(hex, 5, 6)
-
+    local r, g, b, a = string.sub(hex, 1, 2), string.sub(hex, 3, 4), string.sub(hex, 5, 6), parseAlpha and string.sub(hex, 7, 8) or "FF"
     -- Turn those into numbers and return them as a Color
-    return Color(tonumber(r, 16), tonumber(g, 16), tonumber(b, 16))
+    return Color(tonumber(r, 16), tonumber(g, 16), tonumber(b, 16), tonumber(a, 16))
 end
 
-PS.RGBtoHEX = function(colorTable)
+local indices = { "r", "g", "b", "a" }
+PS.RGBtoHEX = function(colorTable, parseAlpha)
     local hexadecimal = "" -- End result
 
-    for i = 1, 3 do
+    for i = 1, (parseAlpha and 4 or 3) do
         local color
 
-        if i == 1 then
-            color = colorTable.r
-        elseif i == 2 then
-            color = colorTable.g
-        else
-            color = colorTable.b
-        end
-
+        color = colorTable[indices[i]]
         local hex = ""
 
         -- Get RRGGBB
