@@ -113,7 +113,8 @@ function ENT:OnRemove()
 end
 
 function ENT:Draw()
-    if not self.Item or not IsValid(self.CSModel) then return end
+    local owner = self:GetOwner()
+    if not IsValid(owner) or not self.Item or not IsValid(self.CSModel) then return end
     self.Item:OnPreModelDraw(owner, self, self.CSModel)
     self.CSModel:DrawModel()
 end
