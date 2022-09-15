@@ -72,7 +72,7 @@ function BASE:OnThink(ply, mods)
 end
 
 function BASE:OnCustomizeSetup(panel, mods)
-    mods.color = mods.color or "#FFFFFF"
+    mods.color = mods.color or "#FFFFFFFF"
     mods.colorMode = mods.colorMode or "color"
 
     self:SetupThinker(panel, mods, {
@@ -86,13 +86,13 @@ function BASE:OnCustomizeSetup(panel, mods)
     local values = { "Color", "Player Color", "Rainbow" }
     local datas = { "color", "player", "rainbow" }
 
-    PS.AddColorModeSelector(panel, "Trail Color Mode", PS.HEXtoRGB(mods.color or ""), values[table.KeyFromValue(datas, mods.colorMode) or 1], values, datas, function(v, d, c)
+    PS.AddColorModeSelector(panel, "Trail Color Mode", PS.HEXtoRGB(mods.color or ""), true, values[table.KeyFromValue(datas, mods.colorMode) or 1], values, datas, function(v, d, c)
         mods.colorMode = d
-        mods.color = "#" .. PS.RGBtoHEX(c)
+        mods.color = "#" .. PS.RGBtoHEX(c, true)
     end)
 end
 
-function PS.AddColorModeSelector(panel, text, color, value, values, data, callback)
+function PS.AddColorModeSelector(panel, text, color, allowAlpha, value, values, data, callback)
     local picker = nil
     local container = PS.AddComboBox(panel, text, value, values, data, function(v, d)
         picker:SetVisible(d == "color")
@@ -104,7 +104,7 @@ function PS.AddColorModeSelector(panel, text, color, value, values, data, callba
 
     picker = container:Add("PS_ColorPicker")
     picker:SetVisible(value == "Color")
-    picker:SetValue(color)
+    picker:SetValue(color, allowAlpha)
     picker:Dock(LEFT)
     picker.OnValueChanged = function(this, _color)
         local id = container.ComboBox:GetSelectedID()
