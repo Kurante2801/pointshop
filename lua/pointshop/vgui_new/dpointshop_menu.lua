@@ -1061,25 +1061,31 @@ function PANEL:MakeSettingsPanel(panel)
         PS.AccessoryVisibility:SetInt(data)
     end).ComboBox:SetSortItems(false)
 
-    PS.AddComboBox(panel, "What accessories can you see?", values[PS.AccessoryEnabled:GetInt()], values, { 1, 2, 3 }, function(_, data)
+    local cbElement = PS.AddComboBox(panel, "What accessories can you see?", values[PS.AccessoryEnabled:GetInt()], values, { 1, 2, 3 }, function(_, data)
         PS.AccessoryEnabled:SetInt(data)
-    end).ComboBox:SetSortItems(false)
+    end)
+    cbElement.ComboBox:SetSortItems(false)
+    cbElement:DockMargin(0, 0, 0, 18)
 
     PS.AddComboBox(panel, "Who can see your trails?", values[PS.TrailVisibility:GetInt()], values, { 1, 2, 3 }, function(_, data)
         PS.TrailVisibility:SetInt(data)
     end).ComboBox:SetSortItems(false)
 
-    PS.AddComboBox(panel, "What trails can you see?", values[PS.TrailEnabled:GetInt()], values, { 1, 2, 3 }, function(_, data)
+    cbElement = PS.AddComboBox(panel, "What trails can you see?", values[PS.TrailEnabled:GetInt()], values, { 1, 2, 3 }, function(_, data)
         PS.TrailEnabled:SetInt(data)
-    end).ComboBox:SetSortItems(false)
+    end)
+    cbElement.ComboBox:SetSortItems(false)
+    cbElement:DockMargin(0, 0, 0, 18)
 
     PS.AddComboBox(panel, "Who can see your followers?", values[PS.FollowerVisibility:GetInt()], values, { 1, 2, 3 }, function(_, data)
         PS.FollowerVisibility:SetInt(data)
     end).ComboBox:SetSortItems(false)
 
-    PS.AddComboBox(panel, "What followers can you see?", values[PS.FollowerEnabled:GetInt()], values, { 1, 2, 3 }, function(_, data)
+    cbElement = PS.AddComboBox(panel, "What followers can you see?", values[PS.FollowerEnabled:GetInt()], values, { 1, 2, 3 }, function(_, data)
         PS.FollowerEnabled:SetInt(data)
-    end).ComboBox:SetSortItems(false)
+    end)
+    cbElement.ComboBox:SetSortItems(false)
+    cbElement:DockMargin(0, 0, 0, 18)
 
     hook.Run("PS_SettingsPanel", panel)
 end
