@@ -1,7 +1,7 @@
 local BASE = {}
 BASE.ID = "trail"
 BASE.Material = "trails/laser"
-BASE.Modify = false
+BASE.Modify = true
 BASE.Color = Color(255, 255, 255)
 BASE.PlayerColorable = true -- Can trail color be the same as PLAYER:GetPlayerColor
 BASE.RainbowColorable = true -- Can trail color be a rainbow
