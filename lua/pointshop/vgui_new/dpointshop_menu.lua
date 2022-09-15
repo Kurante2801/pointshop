@@ -401,7 +401,7 @@ function PANEL:Init()
         end)
         PS:FadeHover(self.SideBarToggle, "Foreground2Color", 125, 6, 6)
 
-    self.CategoriesContainer = self.Left:Add("FDLib.ScrollPanel")
+    self.CategoriesContainer = self.Left:Add("DScrollPanel")
     self.CategoriesContainer:Dock(FILL)
     self.CategoriesContainer.Paint = emptyfunc
 
