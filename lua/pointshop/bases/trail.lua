@@ -1,7 +1,7 @@
 local BASE = {}
 BASE.ID = "trail"
 BASE.Material = "trails/laser"
-BASE.Modify = true
+BASE.Modify = false
 BASE.Color = Color(255, 255, 255)
 BASE.Colorable = true
 
