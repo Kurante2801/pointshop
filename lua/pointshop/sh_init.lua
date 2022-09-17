@@ -57,9 +57,13 @@ end
 function PS:RegisterBase(base)
     if self.LoadingItems then
         return base
-    else
+    elseif not base.ID then
         PS:LoadItems()
+        return
     end
+
+    PS:NewBase(base)
+    PS:UpdateClient()
 end
 
 -- The base all bases base off
