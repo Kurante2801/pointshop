@@ -1243,8 +1243,8 @@ function PANEL:OnItemSelected(item)
         -- Offset
         pos = pos + ang:Forward() * prop.pos.x - ang:Right() * prop.pos.y + ang:Up() * prop.pos.z
         ang:RotateAroundAxis(ang:Forward(), prop.ang.p)
-        ang:RotateAroundAxis(ang:Right(), prop.ang.y)
-        ang:RotateAroundAxis(ang:Up(), prop.ang.r)
+        ang:RotateAroundAxis(ang:Right(), -prop.ang.y)
+        ang:RotateAroundAxis(ang:Up(), -prop.ang.r)
         model:SetPos(pos)
         model:SetAngles(ang)
         model:SetRenderOrigin(pos)

@@ -17,7 +17,7 @@ ITEM.Props = {
         model = "models/xqm/jetengine.mdl",
         bone = "ValveBiped.Bip01_Spine2",
         pos = Vector(5, -9.75, 0),
-        ang = Angle(0, -9.5, 0),
+        ang = Angle(0, 0, 0),
         scale = Vector(0.5, 0.5, 0.5),
     },
 }
