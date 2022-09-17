@@ -232,9 +232,9 @@ function BASE:OnPlayerDraw(ply, flags, ent, mods)
         -- Offset
         pos = pos + ang:Forward() * data.pos.x - ang:Right() * data.pos.y + ang:Up() * data.pos.z
         model, pos, ang = self:ModifyClientsideModel(ply, model, pos, ang)
+        ang:RotateAroundAxis(ang:Up(), data.ang.y)
+        ang:RotateAroundAxis(ang:Right(), -data.ang.r)
         ang:RotateAroundAxis(ang:Forward(), data.ang.p)
-        ang:RotateAroundAxis(ang:Right(), -data.ang.y)
-        ang:RotateAroundAxis(ang:Up(), -data.ang.r)
         model:SetPos(pos)
         model:SetAngles(ang)
         model:SetRenderOrigin(pos)
