@@ -424,9 +424,9 @@ function PANEL:Paint(w, h)
 
             -- Offset
             pos = pos + ang:Forward() * model.prop.pos.x - ang:Right() * model.prop.pos.y + ang:Up() * model.prop.pos.z
-            ang:RotateAroundAxis(ang:Right(), model.prop.ang.p)
-            ang:RotateAroundAxis(ang:Up(), model.prop.ang.y)
-            ang:RotateAroundAxis(ang:Forward(), model.prop.ang.r)
+            ang:RotateAroundAxis(ang:Forward(), model.prop.ang.p)
+            ang:RotateAroundAxis(ang:Right(), model.prop.ang.y)
+            ang:RotateAroundAxis(ang:Up(), model.prop.ang.r)
 
             model, pos, ang = item:ModifyClientsideModel(LocalPlayer(), model, pos, ang)
 

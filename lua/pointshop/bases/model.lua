@@ -125,9 +125,9 @@ function BASE:OnPanelSetup(panel)
         if not pos or not ang then continue end
         -- Offset
         pos = pos + ang:Forward() * prop.pos.x - ang:Right() * prop.pos.y + ang:Up() * prop.pos.z
-        ang:RotateAroundAxis(ang:Right(), prop.ang.p)
-        ang:RotateAroundAxis(ang:Up(), prop.ang.y)
-        ang:RotateAroundAxis(ang:Forward(), prop.ang.r)
+        ang:RotateAroundAxis(ang:Forward(), prop.ang.p)
+        ang:RotateAroundAxis(ang:Right(), prop.ang.y)
+        ang:RotateAroundAxis(ang:Up(), prop.ang.r)
         model:SetPos(pos)
         model:SetAngles(ang)
         model:SetRenderOrigin(pos)
@@ -232,9 +232,9 @@ function BASE:OnPlayerDraw(ply, flags, ent, mods)
         -- Offset
         pos = pos + ang:Forward() * data.pos.x - ang:Right() * data.pos.y + ang:Up() * data.pos.z
         model, pos, ang = self:ModifyClientsideModel(ply, model, pos, ang)
-        ang:RotateAroundAxis(ang:Right(), data.ang.p)
-        ang:RotateAroundAxis(ang:Up(), data.ang.y)
-        ang:RotateAroundAxis(ang:Forward(), data.ang.r)
+        ang:RotateAroundAxis(ang:Forward(), data.ang.p)
+        ang:RotateAroundAxis(ang:Right(), data.ang.y)
+        ang:RotateAroundAxis(ang:Up(), data.ang.r)
         model:SetPos(pos)
         model:SetAngles(ang)
         model:SetRenderOrigin(pos)
@@ -279,9 +279,9 @@ function BASE:ModifyClientsideModel(ply, model, pos, ang)
 
     -- Offset
     pos = pos + ang:Forward() * mods.pos.x - ang:Right() * mods.pos.y + ang:Up() * mods.pos.z
-    ang:RotateAroundAxis(ang:Right(), mods.ang.p)
-    ang:RotateAroundAxis(ang:Up(), mods.ang.y)
-    ang:RotateAroundAxis(ang:Forward(), mods.ang.r)
+    ang:RotateAroundAxis(ang:Forward(), mods.ang.p)
+    ang:RotateAroundAxis(ang:Right(), mods.ang.y)
+    ang:RotateAroundAxis(ang:Up(), mods.ang.r)
     model:SetModelScale(mods.scale)
 
     return model, pos, ang
