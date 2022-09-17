@@ -43,7 +43,9 @@ PS.Config.Themes["dark"] = {
 }
 
 PS.UserGroups = {
-    ["user"] = { "superadmin", "admin", "user" },
+    ["user"] = { "superadmin", "admin", "premium", "member", "user" },
+    ["member"] = { "superadmin", "admin", "premium", "member" },
+    ["premium"] = { "superadmin", "admin", "premium" },
     ["admin"] = { "superadmin", "admin" },
     ["superadmin"] = { "superadmin" },
 }
