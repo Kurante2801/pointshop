@@ -41,7 +41,12 @@ end
 
 function ENT:Think()
     local owner = self:GetOwner()
-    if not IsValid(owner) then return end
+    if not IsValid(owner) then
+        if SERVER then
+            self:Remove()
+        end
+        return
+    end
 
     self:SetPos(owner:GetPos())
 
@@ -106,6 +111,8 @@ function ENT:DrawTranslucent()
 
     -- Update color
     local owner = self:GetOwner()
+    if not IsValid(owner) then return end
+
     if self:GetItemID() ~= "" then
         PS.Items[self:GetItemID()]:ColorFunction(self, owner)
     else

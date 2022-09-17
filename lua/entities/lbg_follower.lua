@@ -37,7 +37,9 @@ end
 function ENT:Think()
     local owner = self:GetOwner()
     if not IsValid(owner) then
-        SafeRemoveEntity(self)
+        if SERVER then
+            SafeRemoveEntity(self)
+        end
         return
     end
 
