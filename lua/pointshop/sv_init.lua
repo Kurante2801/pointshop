@@ -155,14 +155,21 @@ hook.Add('PlayerDeath', 'PS_PlayerDeath', function(ply)
     ply:PS_PlayerDeath()
 end)
 
-hook.Add("PlayerInitialSpawn", "PS_PlayerInitialSpawn", function(ply)
+hook.Add("PlayerInitialSpawn", "FullLoadSetup", function(ply)
     hook.Add("SetupMove", ply, function(this, ply, _, cmd)
-        ply:PS_PlayerInitialSpawn()
         if this == ply and not cmd:IsForced() then
             hook.Remove("SetupMove", this)
-            ply:PS_NetReady()
+            hook.Run("PlayerFullLoad", this)
         end
     end)
+end)
+
+hook.Add("PlayerInitialSpawn", "PS_PlayerInitialSpawn", function(ply)
+    ply:PS_PlayerInitialSpawn()
+end)
+
+hook.Add("PlayerFullLoad", "PS_NetReady", function(ply)
+    ply:PS_NetReady()
 end)
 
 hook.Add('PlayerDisconnected', 'PS_PlayerDisconnected', function(ply)

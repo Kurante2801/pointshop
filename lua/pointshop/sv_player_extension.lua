@@ -34,6 +34,8 @@ function Player:PS_PlayerInitialSpawn()
 end
 
 function Player:PS_NetReady()
+    self:PS_SendPoints()
+    self:PS_SendItems()
     self:PS_PlayerSpawn()
     self:PS_SendClientsideModels()
 
