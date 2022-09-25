@@ -37,7 +37,6 @@ function Player:PS_NetReady()
     self:PS_SendPoints()
     self:PS_SendItems()
     self:PS_PlayerSpawn()
-    self:PS_SendClientsideModels()
 
     if PS.Config.NotifyOnJoin then
         if PS.Config.ShopKey ~= "" then
@@ -417,33 +416,6 @@ function Player:PS_ModifyItem(item_id, modifications)
     self:PS_SendItems()
 end
 
--- clientside Models
-function Player:PS_AddClientsideModel(item_id)
-    if not PS.Items[item_id] then return false end
-    if not self:PS_HasItem(item_id) then return false end
-    net.Start('PS_AddClientsideModel')
-    net.WriteEntity(self)
-    net.WriteString(item_id)
-    net.Broadcast()
-
-    if not PS.ClientsideModels[self] then
-        PS.ClientsideModels[self] = {}
-    end
-
-    PS.ClientsideModels[self][item_id] = item_id
-end
-
-function Player:PS_RemoveClientsideModel(item_id)
-    if not PS.Items[item_id] then return false end
-    if not self:PS_HasItem(item_id) then return false end
-    if not PS.ClientsideModels[self] or not PS.ClientsideModels[self][item_id] then return false end
-    net.Start('PS_RemoveClientsideModel')
-    net.WriteEntity(self)
-    net.WriteString(item_id)
-    net.Broadcast()
-    PS.ClientsideModels[self][item_id] = nil
-end
-
 -- menu stuff
 function Player:PS_ToggleMenu(show)
     net.Start('PS_ToggleMenu')
@@ -477,12 +449,6 @@ function Player:PS_SendItems()
         net.WriteData(compressed:sub(start + 1, endbyte + 1), size)
         net.Broadcast()
     end
-end
-
-function Player:PS_SendClientsideModels()
-    net.Start('PS_SendClientsideModels')
-    PS.WriteTable(PS.ClientsideModels)
-    net.Send(self)
 end
 
 -- notifications

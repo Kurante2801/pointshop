@@ -181,48 +181,6 @@ net.Receive('PS_Points', function(length)
     ply.PS_Points = PS:ValidatePoints(points)
 end)
 
-net.Receive('PS_AddClientsideModel', function(length)
-    local ply = net.ReadEntity()
-    local item_id = net.ReadString()
-
-    if not IsValid(ply) then
-        if not invalidplayeritems[ply] then
-            invalidplayeritems[ply] = {}
-        end
-
-        table.insert(invalidplayeritems[ply], item_id)
-
-        return
-    end
-
-    ply:PS_AddClientsideModel(item_id)
-end)
-
-net.Receive('PS_RemoveClientsideModel', function(length)
-    local ply = net.ReadEntity()
-    local item_id = net.ReadString()
-    if not ply or not IsValid(ply) or not ply:IsPlayer() then return end
-    ply:PS_RemoveClientsideModel(item_id)
-end)
-
-net.Receive('PS_SendClientsideModels', function(length)
-    local itms = PS.ReadTable()
-
-    for ply, items in pairs(itms) do
-        -- skip if the player isn't valid yet and add them to the table to sort out later
-        if not IsValid(ply) then
-            invalidplayeritems[ply] = items
-            continue
-        end
-
-        for _, item_id in pairs(items) do
-            if PS.Items[item_id] then
-                ply:PS_AddClientsideModel(item_id)
-            end
-        end
-    end
-end)
-
 net.Receive('PS_SendNotification', function(length)
     local str = net.ReadString()
     notification.AddLegacy(str, NOTIFY_GENERIC, 5)

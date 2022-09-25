@@ -331,12 +331,6 @@ function PS:UpdateClient()
 
     if not CLIENT then return end
 
-    for ply, items in pairs(PS.ClientsideModels) do
-        for id, _ in pairs(items) do
-            ply:PS_AddClientsideModel(id)
-        end
-    end
-
     -- Download materials
     if not file.Exists("lbg_pointshop_webmaterials", "DATA") then
         file.CreateDir("lbg_pointshop_webmaterials")
