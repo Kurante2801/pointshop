@@ -410,7 +410,7 @@ function PANEL:Paint(w, h)
     local should, item = false, nil, nil
     if PS.ActiveItem then
         item = PS.Items[PS.ActiveItem]
-        if item and (item.IsPlayermodel or item.Props) then
+        if item then
             should = true
         end
     end
