@@ -107,6 +107,7 @@ local emptyFunc = function() end
 local emptyFuncs = {
     "OnBuy", "OnSell", "OnEquip", "OnHolster", "OnModify",
     "OnSpawn", "OnDeath", "OnLoadout", "OnThink", "OnMove", "OnDraw",
+    "OnPreviewDraw"
 }
 for _, func in ipairs(emptyFuncs) do
     PS.MasterBase[func] = emptyFunc

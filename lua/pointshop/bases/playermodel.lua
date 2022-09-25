@@ -43,6 +43,14 @@ function BASE:OnModify(ply, mods)
     self:SetBodygroups(ply, mods)
 end
 
+local empty = {}
+function BASE:OnPreviewDraw(w, h, panel)
+    if panel:GetModel() ~= self.Model then
+        panel:SetModel(self.Model)
+    end
+    self:SetBodygroups(panel.Entity, empty)
+end
+
 function BASE:SetBodygroups(ply, mods)
     if self.Skins then
         if #self.Skins == 1 or not mods.skin or not table.HasValue(self.Skins, mods.skin) then
