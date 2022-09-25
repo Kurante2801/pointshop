@@ -15,7 +15,7 @@ end
 
 local materials = {}
 function BASE:OnPlayerDraw(ply)
-    if self:GamemodeCheck() or not PS:CanSeeAccessory(ply) then return end
+    if PS.GamemodeCheck(self) or not PS:CanSeeAccessory(ply) then return end
     if not ply:Alive() then
         ply = ply:GetRagdollEntity()
         if not IsValid(ply) then

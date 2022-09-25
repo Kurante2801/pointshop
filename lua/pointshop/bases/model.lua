@@ -57,7 +57,7 @@ local surface_SetMaterial = surface.SetMaterial
 local surface_DrawTexturedRect = surface.DrawTexturedRect
 
 function BASE:OnPlayerDraw(ply, flags, ent, mods)
-    if self:GamemodeCheck() or not self.Props or not PS:CanSeeAccessory(ply) then return end
+    if PS.GamemodeCheck(self) or not self.Props or not PS:CanSeeAccessory(ply) then return end
 
     self:SetupModels()
     self:DrawModels(ply, ent, PS.CSModels[self.ID], mods)

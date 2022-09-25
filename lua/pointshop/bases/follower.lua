@@ -18,13 +18,13 @@ function BASE:OnEquip(ply, mods)
     PS.Followers[ply] = PS.Followers[ply] or {}
 
     self:OnHolster(ply)
-    if self:GamemodeCheck() or not ply:Alive() or ply:PS_IsSpectator() then return end
+    if PS.GamemodeCheck(self) or not ply:Alive() or ply:PS_IsSpectator() then return end
 
     PS.Followers[ply][self.ID] = self:CreateEnt(ply, mods)
 end
 
 function BASE:OnHolster(ply)
-    if self:GamemodeCheck() or not PS.Followers or not PS.Followers[ply] then return end
+    if PS.GamemodeCheck(self) or not PS.Followers or not PS.Followers[ply] then return end
 
     SafeRemoveEntity(PS.Followers[ply][self.ID])
     PS.Followers[ply][self.ID] = nil

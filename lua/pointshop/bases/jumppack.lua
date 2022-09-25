@@ -3,7 +3,7 @@ local BASE = {}
 BASE.Base = "model"
 
 function BASE:OnMove(ply, mods, data)
-    if self:GamemodeCheck() then return end
+    if PS.GamemodeCheck(self) then return end
 
     local buttons = data:GetButtons()
     if bit.band(buttons, IN_JUMP) > 0 then

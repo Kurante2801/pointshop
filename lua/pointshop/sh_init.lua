@@ -75,13 +75,6 @@ PS.MasterBase = {
     ToString = function(this)
         return "[base] " .. this.ID
     end,
-    GamemodeCheck = function(this)
-        if this.GamemodesWhitelistIndex then
-            return not this.GamemodesWhitelistIndex[GAMEMODE.FolderName]
-        elseif this.GamemodesBlacklistIndex then
-            return this.GamemodesBlacklistIndex[GAMEMODE.FolderName]
-        end
-    end,
     SetupThinker = function(this, panel, mods_reference, mods_copy, compare_func, on_change)
         local thinker = panel:Add("EditablePanel")
         thinker:SetMouseInputEnabled(false)
@@ -232,12 +225,11 @@ function PS:NewItem(item)
         end
     end
 
-    PS.Items[item.ID] = setmetatable(item, item)
-
     if item.Model then
         util.PrecacheModel(item.Model)
     end
 
+    PS.Items[item.ID] = setmetatable(item, item)
     return item
 end
 
@@ -348,6 +340,14 @@ function PS:UpdateClient()
     -- Download materials
     if not file.Exists("lbg_pointshop_webmaterials", "DATA") then
         file.CreateDir("lbg_pointshop_webmaterials")
+    end
+end
+
+function PS.GamemodeCheck(item)
+    if item.GamemodesWhitelistIndex then
+        return not item.GamemodesWhitelistIndex[GAMEMODE.FolderName]
+    elseif item.GamemodesBlacklistIndex then
+        return item.GamemodesBlacklistIndex[GAMEMODE.FolderName]
     end
 end
 

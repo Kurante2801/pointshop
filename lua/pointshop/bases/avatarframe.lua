@@ -2,12 +2,12 @@ local BASE = {}
 BASE.ID = "avatarframe"
 
 function BASE:OnEquip(ply, mods)
-    if self:GamemodeCheck() then return end
+    if PS.GamemodeCheck(self) then return end
     ply:SetNWString("LBG_AvatarFrame", self.ID)
 end
 
 function BASE:OnHolster(ply)
-    if self:GamemodeCheck() then return end
+    if PS.GamemodeCheck(self) then return end
     ply:SetNWString("LBG_AvatarFrame", "")
 end
 

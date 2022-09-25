@@ -23,7 +23,7 @@ function PS:SpriteTrail(ply, color, startW, endW, lifeT, mat)
 end
 
 function BASE:OnEquip(ply, mods)
-    if self:GamemodeCheck() then return end
+    if PS.GamemodeCheck(self) then return end
     PS.Trails[ply] = PS.Trails[ply] or {}
     self:OnHolster(ply, mods)
     if ply:PS_IsSpectator(ply) then return end
@@ -51,19 +51,19 @@ function BASE:OnDeath(ply, mods)
 end
 
 function BASE:OnHolster(ply, mods)
-    if self:GamemodeCheck() then return end
+    if PS.GamemodeCheck(self) then return end
     if not PS.Trails[ply] then return end
     SafeRemoveEntity(PS.Trails[ply][self.ID])
     PS.Trails[ply][self.ID] = nil
 end
 
 function BASE:OnModify(ply, mods)
-    if self:GamemodeCheck() then return end
+    if PS.GamemodeCheck(self) then return end
     if not PS.Trails[ply] or not PS.Trails[ply][self.ID] then return end
 end
 
 function BASE:OnThink(ply, mods)
-    if self:GamemodeCheck() then return end
+    if PS.GamemodeCheck(self) then return end
     if CLIENT or not PS.Trails[ply] or not PS.Trails[ply][self.ID] then return end
 
     if ply:PS_IsSpectator() then

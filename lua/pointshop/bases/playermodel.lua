@@ -5,7 +5,7 @@ BASE.Modify = false -- set to true on ITEM when adding skins/bodygroups
 BASE.Colorable = true
 
 function BASE:OnEquip(ply, mods)
-    if self:GamemodeCheck() or ply:PS_IsSpectator() then return end
+    if PS.GamemodeCheck(self) or ply:PS_IsSpectator() then return end
 
     if not ply.PS_OldModel then
         local old = ply:GetModel()
@@ -19,7 +19,7 @@ function BASE:OnEquip(ply, mods)
 end
 
 function BASE:OnSpawn(ply, mods)
-    if self:GamemodeCheck() or ply:PS_IsSpectator() then return end
+    if PS.GamemodeCheck(self) or ply:PS_IsSpectator() then return end
 
     local old = ply:GetModel()
     if old ~= "models/player.mdl" and old ~= self.Model then
@@ -31,7 +31,7 @@ function BASE:OnSpawn(ply, mods)
 end
 
 function BASE:OnHolster(ply)
-    if self:GamemodeCheck() or ply:PS_IsSpectator() then return end
+    if PS.GamemodeCheck(self) or ply:PS_IsSpectator() then return end
 
     if ply.PS_OldModel then
         ply:SetModel(ply.PS_OldModel)
@@ -39,7 +39,7 @@ function BASE:OnHolster(ply)
 end
 
 function BASE:OnModify(ply, mods)
-    if self:GamemodeCheck() or ply:PS_IsSpectator() then return end
+    if PS.GamemodeCheck(self) or ply:PS_IsSpectator() then return end
     self:SetBodygroups(ply, mods)
 end
 
