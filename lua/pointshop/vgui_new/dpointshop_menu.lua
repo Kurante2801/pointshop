@@ -523,7 +523,7 @@ function PANEL:Init()
             return
         end
 
-        if item.Modify and not item:GamemodeCheck() then
+        if item.Modify and not PS:GamemodeCheck(item) then
             this:SetEnabled(true)
             this:SetHoverText("Customize")
         else
