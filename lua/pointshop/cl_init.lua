@@ -186,21 +186,6 @@ net.Receive('PS_SendNotification', function(length)
     notification.AddLegacy(str, NOTIFY_GENERIC, 5)
 end)
 
--- hooks
-hook.Add('Think', 'PS_Think', function()
-    for ply, items in pairs(invalidplayeritems) do
-        if IsValid(ply) then
-            for _, item_id in pairs(items) do
-                if PS.Items[item_id] then
-                    ply:PS_AddClientsideModel(item_id)
-                end
-            end
-
-            invalidplayeritems[ply] = nil
-        end
-    end
-end)
-
 function PS.PlayerDraw(ply, flags, ent)
     if not ply.PS_Items then return end
 

@@ -313,6 +313,53 @@ function PS.AddSelector(panel, text, value, values, callback)
     return container
 end
 
+function PS.AddColorSelector(panel, text, value, callback)
+    local container = panel:Add("EditablePanel")
+    container:Dock(TOP)
+    container:DockMargin(0, 0, 0, 6)
+    container:SetTall(32)
+
+    container.header = container:Add("PS_Button")
+    container.header:Dock(LEFT)
+    container.header:DockMargin(0, 0, 6, 0)
+    container.header:SetWide(180)
+    container.header:SetText(text)
+    container.header:SetMouseInputEnabled(false)
+    container.header:SetThemeMainColor("Foreground1Color")
+
+    container.picker = container:Add("PS_ColorPicker")
+    container.picker:Dock(LEFT)
+    container.picker:DockMargin(0, 0, 6, 0)
+    container.picker:SetWide(180)
+    container.picker:SetValue(value)
+    container.picker.OnValueChanged = function(this, _value)
+        callback(_value)
+    end
+end
+
+function PS.AddColorModeSelector(panel, text, color, allowAlpha, value, values, data, callback)
+    local picker = nil
+    local container = PS.AddComboBox(panel, text, value, values, data, function(v, d)
+        picker:SetVisible(d == "color")
+        callback(v, d, picker:GetValue())
+    end)
+    container.ComboBox:Dock(LEFT)
+    container.ComboBox:DockMargin(6, 0, 6, 0)
+    container.ComboBox:SetWide(200)
+
+    picker = container:Add("PS_ColorPicker")
+    picker:SetVisible(value == "Color")
+    picker:SetValue(color, allowAlpha)
+    picker:Dock(LEFT)
+    picker.OnValueChanged = function(this, _color)
+        local id = container.ComboBox:GetSelectedID()
+        callback(container.ComboBox:GetOptionText(id), container.ComboBox:GetOptionData(id), _color)
+    end
+    container.picker = picker
+
+    return container
+end
+
 local PANEL = {}
 PANEL.BarHeight = 34
 

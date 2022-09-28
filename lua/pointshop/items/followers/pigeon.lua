@@ -6,7 +6,6 @@ ITEM.Base = "follower"
 ITEM.ID = "pigeon"
 ITEM.Name = "Pigeon"
 ITEM.Model = "models/pigeon.mdl"
-ITEM.AutomaticFrameAdvance = true
 
 function ITEM:OnModelThink(ply, ent, model)
     local sequence
