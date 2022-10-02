@@ -54,70 +54,57 @@ end)
 -- Points from admin to player
 NetMessage("PS_GivePoints", function(_, ply)
     if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
-    local other = net.ReadEntity()
 
-    if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
     local admin_allowed = PS.Config.AdminCanAccessAdminTab and ply:IsAdmin()
     local super_admin_allowed = PS.Config.SuperAdminCanAccessAdminTab and ply:IsSuperAdmin()
+    if not admin_allowed and not super_admin_allowed then return end
 
+    local other = net.ReadEntity()
     local points = PS:ValidatePoints(net.ReadUInt(32))
-    if (admin_allowed or super_admin_allowed) and other and points and IsValid(other) and other:IsPlayer() then
+    if IsValid(other) and other:IsPlayer() then
         other:PS_GivePoints(points)
         other:PS_Notify(string.format("%s gave you %s %s.", ply:Name(), points, PS.Config.PointsName))
     end
 end)
 NetMessage("PS_TakePoints", function(_, ply)
     if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
-    local other = net.ReadEntity()
 
-    if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
     local admin_allowed = PS.Config.AdminCanAccessAdminTab and ply:IsAdmin()
     local super_admin_allowed = PS.Config.SuperAdminCanAccessAdminTab and ply:IsSuperAdmin()
+    if not admin_allowed and not super_admin_allowed then return end
 
+    local other = net.ReadEntity()
     local points = PS:ValidatePoints(net.ReadUInt(32))
-    if (admin_allowed or super_admin_allowed) and other and points and IsValid(other) and other:IsPlayer() then
+    if IsValid(other) and other:IsPlayer() then
         other:PS_TakePoints(points)
         other:PS_Notify(string.format("%s took %s %s from you.", ply:Name(), points, PS.Config.PointsName))
     end
 end)
 NetMessage("PS_SetPoints", function(_, ply)
-    print("FUCK")
     if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
-    local other = net.ReadEntity()
 
-    if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
     local admin_allowed = PS.Config.AdminCanAccessAdminTab and ply:IsAdmin()
     local super_admin_allowed = PS.Config.SuperAdminCanAccessAdminTab and ply:IsSuperAdmin()
+    if not admin_allowed and not super_admin_allowed then return end
 
+    local other = net.ReadEntity()
     local points = PS:ValidatePoints(net.ReadUInt(32))
-    if (admin_allowed or super_admin_allowed) and other and points and IsValid(other) and other:IsPlayer() then
+    if IsValid(other) and other:IsPlayer() then
         other:PS_SetPoints(points)
         other:PS_Notify(string.format("%s set your %s to %s.", ply:Name(), PS.Config.PointsName, points))
     end
 end)
-NetMessage("PS_SetPoints", function(_, ply)
-    if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
-    local other = net.ReadEntity()
 
-    if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
-    local admin_allowed = PS.Config.AdminCanAccessAdminTab and ply:IsAdmin()
-    local super_admin_allowed = PS.Config.SuperAdminCanAccessAdminTab and ply:IsSuperAdmin()
-
-    local item_id = net.ReadString()
-    if (admin_allowed or super_admin_allowed) and other and item_id and PS.Items[item_id] and IsValid(other) and other:IsPlayer() then
-        other:PS_GiveItem(item_id)
-    end
-end)
 NetMessage("PS_TakeItem", function(_, ply)
     if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
-    local other = net.ReadEntity()
 
-    if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
     local admin_allowed = PS.Config.AdminCanAccessAdminTab and ply:IsAdmin()
     local super_admin_allowed = PS.Config.SuperAdminCanAccessAdminTab and ply:IsSuperAdmin()
+    if not admin_allowed and not super_admin_allowed then return end
 
+    local other = net.ReadEntity()
     local item_id = net.ReadString()
-    if (admin_allowed or super_admin_allowed) and other and item_id and PS.Items[item_id] and IsValid(other) and other:IsPlayer() and other:PS_HasItem(item_id) then
+    if PS.Items[item_id] and IsValid(other) and other:IsPlayer() and other:PS_HasItem(item_id) then
         -- holster it first without notificaiton
         other.PS_Items[item_id].Equipped = false
         local ITEM = PS.Items[item_id]

@@ -106,7 +106,7 @@ function Player:PS_TakePoints(points)
 end
 
 function Player:PS_SetPoints(points)
-    self.PS_Points = PS:ValidatePoints(self.PS_Points - points)
+    self.PS_Points = PS:ValidatePoints(points)
     PS:SetPlayerPoints(self, points)
     self:PS_SendPoints()
 end
