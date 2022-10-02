@@ -3,7 +3,6 @@ local emptyfunc = function() end
 local draw_RoundedBox = draw.RoundedBox
 local draw_RoundedBoxEx = draw.RoundedBoxEx
 
-
 PS.ActiveItem = nil
 PS.ActiveTheme = cookie.GetString("PS_Theme", "default")
 PS.Theme = table.Copy(PS.Config.Themes.default)
@@ -188,7 +187,7 @@ function PS.AddSlider(panel, text, value, min, max, snap, callback)
     return slider
 end
 
-function PS.AddBool(panel, text, noText, yesText, value, callback)
+function PS.AddTextArea(panel, text)
     local container = panel:Add("EditablePanel")
     container:Dock(TOP)
     container:DockMargin(0, 0, 0, 6)
@@ -202,6 +201,12 @@ function PS.AddBool(panel, text, noText, yesText, value, callback)
     container.Text:SetWide(container.Text:GetWide() + 12)
     container.Text:SetMouseInputEnabled(false)
     container.Text:SetThemeMainColor("Foreground1Color")
+
+    return container
+end
+
+function PS.AddBool(panel, text, noText, yesText, value, callback)
+    local container = PS.AddTextArea(panel, text)
 
     container.No = container:Add("PS_Button")
     container.No:Dock(LEFT)
@@ -241,19 +246,7 @@ function PS.AddBool(panel, text, noText, yesText, value, callback)
 end
 
 function PS.AddComboBox(panel, text, value, values, data, callback)
-    local container = panel:Add("EditablePanel")
-    container:Dock(TOP)
-    container:DockMargin(0, 0, 0, 6)
-    container:SetTall(32)
-
-    container.Text = container:Add("PS_Button")
-    container.Text:Dock(LEFT)
-    container.Text:DockMargin(0, 0, 6, 0)
-    container.Text:SetText(text)
-    container.Text:SizeToContents()
-    container.Text:SetWide(container.Text:GetWide() + 12)
-    container.Text:SetMouseInputEnabled(false)
-    container.Text:SetThemeMainColor("Foreground1Color")
+    local container = PS.AddTextArea(panel, text)
 
     container.ComboBox = container:Add("PS_ComboBox")
     container.ComboBox:Dock(FILL)
@@ -270,18 +263,7 @@ function PS.AddComboBox(panel, text, value, values, data, callback)
 end
 
 function PS.AddSelector(panel, text, value, values, callback)
-    local container = panel:Add("EditablePanel")
-    container:Dock(TOP)
-    container:DockMargin(0, 0, 0, 6)
-    container:SetTall(32)
-
-    container.header = container:Add("PS_Button")
-    container.header:Dock(LEFT)
-    container.header:DockMargin(0, 0, 6, 0)
-    container.header:SetWide(180)
-    container.header:SetText(text)
-    container.header:SetMouseInputEnabled(false)
-    container.header:SetThemeMainColor("Foreground1Color")
+    local container = PS.AddTextArea(panel, text)
 
     container.grid = container:Add("DIconLayout")
     container.grid:Dock(TOP)
@@ -314,18 +296,7 @@ function PS.AddSelector(panel, text, value, values, callback)
 end
 
 function PS.AddColorSelector(panel, text, value, callback)
-    local container = panel:Add("EditablePanel")
-    container:Dock(TOP)
-    container:DockMargin(0, 0, 0, 6)
-    container:SetTall(32)
-
-    container.header = container:Add("PS_Button")
-    container.header:Dock(LEFT)
-    container.header:DockMargin(0, 0, 6, 0)
-    container.header:SetWide(180)
-    container.header:SetText(text)
-    container.header:SetMouseInputEnabled(false)
-    container.header:SetThemeMainColor("Foreground1Color")
+    local container = PS.AddTextArea(panel, text)
 
     container.picker = container:Add("PS_ColorPicker")
     container.picker:Dock(LEFT)
@@ -373,6 +344,27 @@ function PS.AddColorModeSelector(panel, text, color, speed, allowAlpha, value, v
     end
 
     return container
+end
+
+function PS.AddTextEntry(panel, text, value, charLimit, callback)
+    local container = PS.AddTextArea(panel, text)
+
+    container.entry = container:Add("DTextEntry")
+    container.entry:Dock(FILL)
+    container.entry:SetFont("PS_Label")
+    container.entry:SetValue(value)
+    container.entry:SetTextColor(COLOR_WHITE)
+    container.entry:SetCursorColor(COLOR_WHITE)
+    container.entry:SetPaintBackground(false)
+    container.entry:SetUpdateOnType(true)
+    container.entry.OnValueChange = function(this, _value)
+        this:SetValue(string.sub(_value or "", 1, charLimit))
+        callback(_value)
+    end
+    container.entry.Paint = function(this, w, h)
+        draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+        derma.SkinHook("Paint", "TextEntry", this, w, h)
+    end
 end
 
 local PANEL = {}
@@ -1098,31 +1090,31 @@ function PANEL:MakeSettingsPanel(panel)
     panel.Paint = emptyfunc
 
     local values = { "Everyone", "Same Team Only", "Friends Only" }
-    PS.AddComboBox(panel, "Who can see your accessories?", values[PS.AccessoryVisibility:GetInt()], values, { 1, 2, 3 }, function(_, data)
+    PS.AddComboBox(panel, "Who can see your accessories?", PS.AccessoryVisibility:GetInt(), values, { 1, 2, 3 }, function(_, data)
         PS.AccessoryVisibility:SetInt(data)
     end).ComboBox:SetSortItems(false)
 
-    local cbElement = PS.AddComboBox(panel, "What accessories can you see?", values[PS.AccessoryEnabled:GetInt()], values, { 1, 2, 3 }, function(_, data)
+    local cbElement = PS.AddComboBox(panel, "What accessories can you see?", PS.AccessoryEnabled:GetInt(), values, { 1, 2, 3 }, function(_, data)
         PS.AccessoryEnabled:SetInt(data)
     end)
     cbElement.ComboBox:SetSortItems(false)
     cbElement:DockMargin(0, 0, 0, 18)
 
-    PS.AddComboBox(panel, "Who can see your trails?", values[PS.TrailVisibility:GetInt()], values, { 1, 2, 3 }, function(_, data)
+    PS.AddComboBox(panel, "Who can see your trails?", PS.TrailVisibility:GetInt(), values, { 1, 2, 3 }, function(_, data)
         PS.TrailVisibility:SetInt(data)
     end).ComboBox:SetSortItems(false)
 
-    cbElement = PS.AddComboBox(panel, "What trails can you see?", values[PS.TrailEnabled:GetInt()], values, { 1, 2, 3 }, function(_, data)
+    cbElement = PS.AddComboBox(panel, "What trails can you see?", PS.TrailEnabled:GetInt(), values, { 1, 2, 3 }, function(_, data)
         PS.TrailEnabled:SetInt(data)
     end)
     cbElement.ComboBox:SetSortItems(false)
     cbElement:DockMargin(0, 0, 0, 18)
 
-    PS.AddComboBox(panel, "Who can see your followers?", values[PS.FollowerVisibility:GetInt()], values, { 1, 2, 3 }, function(_, data)
+    PS.AddComboBox(panel, "Who can see your followers?", PS.FollowerVisibility:GetInt(), values, { 1, 2, 3 }, function(_, data)
         PS.FollowerVisibility:SetInt(data)
     end).ComboBox:SetSortItems(false)
 
-    cbElement = PS.AddComboBox(panel, "What followers can you see?", values[PS.FollowerEnabled:GetInt()], values, { 1, 2, 3 }, function(_, data)
+    cbElement = PS.AddComboBox(panel, "What followers can you see?", PS.FollowerEnabled:GetInt(), values, { 1, 2, 3 }, function(_, data)
         PS.FollowerEnabled:SetInt(data)
     end)
     cbElement.ComboBox:SetSortItems(false)

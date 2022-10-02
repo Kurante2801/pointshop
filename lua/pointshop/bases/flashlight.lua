@@ -209,6 +209,7 @@ end
 
 local COLOR_WHITE = Color(255, 255, 255)
 PS.FlashlightsColorsCache = PS.FlashlightsColorCache or {}
+local colorCache = PS.FlashlightsColorsCache
 function BASE:ColorFunction(ply, mods, ent)
     if not self.Modify then
         return COLOR_WHITE
@@ -234,11 +235,11 @@ function BASE:ColorFunction(ply, mods, ent)
         return HSVToColor(RealTime() * (10 * mods.colorSpeed) % 360, 1, 1)
     end
 
-    if not PS.FlashlightsColorsCache[mods.color] then
-        PS.FlashlightsColorsCache[mods.color] = PS.HEXtoRGB(mods.color, true)
+    if not colorCache[mods.color] then
+        colorCache[mods.color] = PS.HEXtoRGB(mods.color, true)
     end
 
-    return PS.FlashlightsColorsCache[mods.color]
+    return colorCache[mods.color]
 end
 
 -- Local player's flashlights, no other hook works as well as CalcView
