@@ -159,4 +159,23 @@ function BASE:ColorFunction(trail, ply)
     trail.Color = colorCache[mods.color]
 end
 
+function BASE:OnPanelSetup(panel)
+    panel.Mat = Material(self.Material, "smooth")
+    panel.FrameTime = 0
+ end
+
+ function BASE:OnPanelPaint(panel, w, h)
+    PS.Mask(panel, 6, 6, w - 12, w - 12, function()
+        surface.SetMaterial(panel.Mat)
+        surface.SetDrawColor(255, 255, 255, 255)
+        -- Scrolling down
+        if panel:IsHovered() then
+            panel.FrameTime = panel.FrameTime + 0.5
+        end
+        local y = math.Round(panel.FrameTime % 128)
+        surface.DrawTexturedRect(6, 6 + y - 128, 128, 128)
+        surface.DrawTexturedRect(6, 6 + y, 128, 128)
+    end)
+ end
+
 return PS:RegisterBase(BASE)

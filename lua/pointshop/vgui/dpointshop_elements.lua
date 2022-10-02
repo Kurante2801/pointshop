@@ -483,7 +483,6 @@ function PANEL:Init()
     self:DockMargin(6, 6, 6, 6)
     self:DockPadding(6, 6, 6, 24)
     self:SetText("")
-    self.FrameTime = 0
 
     self.OwnedMat = Material("lbg_pointshop/derma/sell.png")
     self.EquippedMat = Material("lbg_pointshop/derma/checkroom.png")
@@ -512,17 +511,9 @@ function PANEL:Paint(w, h)
     if self.Item.OnPanelPaint then
         self.Item:OnPanelPaint(self, w, h)
     elseif self.Mat then
-        PS.Mask(self, 6, 6, w - 12, w - 12, function()
-            surface.SetMaterial(self.Mat)
-            surface.SetDrawColor(255, 255, 255, 255)
-            -- Scrolling down
-            if self:IsHovered() then
-                self.FrameTime = self.FrameTime + 0.5
-            end
-            local y = math.Round(self.FrameTime % 128)
-            surface.DrawTexturedRect(6, 6 + y - 128, 128, 128)
-            surface.DrawTexturedRect(6, 6 + y, 128, 128)
-        end)
+        surface.SetMaterial(self.Mat)
+        surface.SetDrawColor(255, 255, 255, 255)
+        surface.DrawTexturedRect(6, 6, 128, 128)
     end
 
     PS.ShadowedText(self:IsHovered() and self.SetHoverText or (self.Item.Name or self.Item.ID), "PS_LabelSmall", w * 0.5, h - 4, COLOR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)

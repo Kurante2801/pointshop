@@ -3,16 +3,6 @@ BASE.ID = "mask"
 BASE.Material = "pointshop/masks/gman_alyx.png"
 BASE.Scale = 1
 
-function BASE:OnPanelSetup(panel)
-   panel.MaskMat = Material(self.Material, "noclamp smooth")
-end
-
-function BASE:OnPanelPaint(panel, w, h)
-    surface.SetDrawColor(255, 255, 255, 255)
-    surface.SetMaterial(panel.MaskMat)
-    surface.DrawTexturedRect(6, 6, 128, 128)
-end
-
 function BASE:OnPlayerDraw(ply, flags, ent, mods)
     if PS.GamemodeCheck(self) or not PS:CanSeeAccessory(ply) then return end
 
