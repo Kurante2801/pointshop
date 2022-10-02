@@ -357,9 +357,11 @@ function PS.AddTextEntry(panel, text, value, charLimit, callback)
     container.entry:SetCursorColor(COLOR_WHITE)
     container.entry:SetPaintBackground(false)
     container.entry:SetUpdateOnType(true)
+    container.entry.AllowInput = function(this, char)
+        return #this:GetValue() >= charLimit
+    end
     container.entry.OnValueChange = function(this, _value)
-        this:SetValue(string.sub(_value or "", 1, charLimit))
-        callback(_value)
+        callback(string.sub(_value or "", 1, charLimit))
     end
     container.entry.Paint = function(this, w, h)
         draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
