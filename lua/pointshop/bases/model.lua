@@ -113,6 +113,8 @@ function BASE:DrawModels(ply, ent, models, mods)
         pos = pos + ang:Forward() * data.pos.x - ang:Right() * data.pos.y + ang:Up() * data.pos.z
         if ply then
             model, pos, ang = self:ModifyClientsideModel(ply, model, pos, ang)
+        else
+            model:SetModelScale(1)
         end
 
         ang:RotateAroundAxis(ang:Forward(), data.ang.p)

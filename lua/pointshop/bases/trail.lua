@@ -77,6 +77,7 @@ end
 function BASE:OnCustomizeSetup(panel, mods)
     mods.color = mods.color or "#FFFFFFFF"
     mods.colorMode = mods.colorMode or "color"
+    mods.colorSpeed = mods.colorSpeed or 7
 
     local values = { "Color" }
     local datas = { "color" }
@@ -91,9 +92,10 @@ function BASE:OnCustomizeSetup(panel, mods)
         table.insert(datas, "rainbow")
     end
 
-    PS.AddColorModeSelector(panel, "Trail Color Mode", PS.HEXtoRGB(mods.color or ""), true, values[table.KeyFromValue(datas, mods.colorMode) or 1], values, datas, function(v, d, c)
+    PS.AddColorModeSelector(panel, "Trail Color Mode", PS.HEXtoRGB(mods.color or ""), mods.colorSpeed, true, mods.colorMode, values, datas, function(v, d, c, s)
         PS:SendModification(self.ID, "colorMode", d)
         PS:SendModification(self.ID, "color", "#" .. PS.RGBtoHEX(c, true))
+        PS:SendModification(self.ID, "colorSpeed", s)
     end)
 end
 
@@ -111,10 +113,12 @@ function BASE:SanitizeTable(mods)
     return {
         color = "#" .. PS.SanitizeHEX(mods.color, true),
         colorMode = mods.colorMode or "color",
+        colorSpeed = isnumber(mods.colorSpeed) and math.Clamp(mods.colorSpeed, 1, 14) or 7
     }
 end
 
 PS.TrailColorsCache = PS.TrailColorCache or {}
+local colorCache = PS.TrailColorsCache
 local COLOR_WHITE = Color(255, 255, 255)
 
 function BASE:ColorFunction(trail, ply)
@@ -134,21 +138,25 @@ function BASE:ColorFunction(trail, ply)
         return
     end
 
+    if not isnumber(mods.colorSpeed) then
+        mods.colorSpeed = 7
+    end
+
     if self.PlayerColorable and mods.colorMode == "player" then
         trail.Color = ply:GetPlayerColor():ToColor()
         return
     end
 
     if self.PlayerColorable and mods.colorMode == "rainbow" then
-        trail.Color = HSVToColor(RealTime() * 70 % 360, 1, 1)
+        trail.Color = HSVToColor(RealTime() * (10 * mods.colorSpeed) % 360, 1, 1)
         return
     end
 
-    if not PS.TrailColorsCache[mods.color] then
-        PS.TrailColorsCache[mods.color] = PS.HEXtoRGB(mods.color, true)
+    if not colorCache[mods.color] then
+        colorCache[mods.color] = PS.HEXtoRGB(mods.color, true)
     end
 
-    trail.Color = PS.TrailColorsCache[mods.color]
+    trail.Color = colorCache[mods.color]
 end
 
 return PS:RegisterBase(BASE)

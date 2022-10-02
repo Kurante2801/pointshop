@@ -257,13 +257,13 @@ function PS.AddComboBox(panel, text, value, values, data, callback)
 
     container.ComboBox = container:Add("PS_ComboBox")
     container.ComboBox:Dock(FILL)
-    container.ComboBox:SetValue(value)
-    container.ComboBox.OnSelect = function(_, i, v, d)
-        callback(v, d)
-    end
 
     for i, v in ipairs(values) do
-        container.ComboBox:AddChoice(v, data[i])
+        container.ComboBox:AddChoice(v, data[i], value == data[i])
+    end
+
+    container.ComboBox.OnSelect = function(_, i, v, d)
+        callback(v, d)
     end
 
     return container
@@ -337,10 +337,12 @@ function PS.AddColorSelector(panel, text, value, callback)
     end
 end
 
-function PS.AddColorModeSelector(panel, text, color, allowAlpha, value, values, data, callback)
+function PS.AddColorModeSelector(panel, text, color, speed, allowAlpha, value, values, data, callback)
     local picker = nil
+    local slider = nil
     local container = PS.AddComboBox(panel, text, value, values, data, function(v, d)
         picker:SetVisible(d == "color")
+        slider:SetVisible(d == "rainbow")
         callback(v, d, picker:GetValue())
     end)
     container.ComboBox:Dock(LEFT)
@@ -348,14 +350,27 @@ function PS.AddColorModeSelector(panel, text, color, allowAlpha, value, values, 
     container.ComboBox:SetWide(200)
 
     picker = container:Add("PS_ColorPicker")
-    picker:SetVisible(value == "Color")
+    picker:SetVisible(value == "color")
     picker:SetValue(color, allowAlpha)
     picker:Dock(LEFT)
     picker.OnValueChanged = function(this, _color)
         local id = container.ComboBox:GetSelectedID()
-        callback(container.ComboBox:GetOptionText(id), container.ComboBox:GetOptionData(id), _color)
+        callback(container.ComboBox:GetOptionText(id), container.ComboBox:GetOptionData(id), _color, slider:GetValue())
     end
     container.picker = picker
+
+    slider = container:Add("PS_HorizontalSlider")
+    slider.Label:SetVisible(false)
+    slider:SetVisible(value == "rainbow")
+    slider:SetMinMax(1, 14)
+    slider:SetDecimals(0)
+    slider:SetSnap(1)
+    slider:SetValue(speed)
+    slider:Dock(FILL)
+    slider.OnValueChanged = function(this, _value)
+        local id = container.ComboBox:GetSelectedID()
+        callback(container.ComboBox:GetOptionText(id), container.ComboBox:GetOptionData(id), picker:GetValue(), _value)
+    end
 
     return container
 end

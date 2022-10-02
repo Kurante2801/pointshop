@@ -30,14 +30,11 @@ PS.Config.Themes = {}
 PS.Config.Themes["default"] = {
     MainColor = Color(200, 0, 0), -- Top bar, buttons, etc
     SecondaryColor = Color(0, 125, 200), -- Top bar, buttons, etc
-    BackgroundColor = Color(25, 25, 25),
-    Foreground1Color = Color(50, 50, 50), -- Scroll bars, deselected buttons, etc
-    Foreground2Color = Color(100, 100, 100), -- Dropdowns, input fields, etc
+    BackgroundColor = Color(0, 0, 0),
+    Foreground1Color = Color(25, 25, 25), -- Scroll bars, deselected buttons, etc
+    Foreground2Color = Color(50, 50, 50), -- Dropdowns, input fields, etc
     ErrorColor = Color(225, 50, 50),
     SuccessColor = Color(50, 225, 175),
-}
-
-PS.Config.Themes["dark"] = {
 }
 
 PS.UserGroups = {

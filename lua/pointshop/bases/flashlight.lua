@@ -90,6 +90,7 @@ end
 function BASE:OnCustomizeSetup(panel, mods)
     mods.color = mods.color or "#FFFFFFFF"
     mods.colorMode = mods.colorMode or "color"
+    mods.colorSpeed = mods.colorSpeed or 7
 
     local values = { "Color" }
     local datas = { "color" }
@@ -104,9 +105,10 @@ function BASE:OnCustomizeSetup(panel, mods)
         table.insert(datas, "rainbow")
     end
 
-    PS.AddColorModeSelector(panel, "Flashlight Color Mode", PS.HEXtoRGB(mods.color or ""), true, values[table.KeyFromValue(datas, mods.colorMode) or 1], values, datas, function(v, d, c)
+    PS.AddColorModeSelector(panel, "Flashlight Color Mode", PS.HEXtoRGB(mods.color or ""), mods.colorSpeed, true, mods.colorMode, values, datas, function(v, d, c, s)
         PS:SendModification(self.ID, "colorMode", d)
         PS:SendModification(self.ID, "color", "#" .. PS.RGBtoHEX(c, true))
+        PS:SendModification(self.ID, "colorSpeed", s)
     end)
 end
 
@@ -224,8 +226,12 @@ function BASE:ColorFunction(ply, mods, ent)
         return ply:GetPlayerColor():ToColor()
     end
 
+    if not isnumber(mods.colorSpeed) then
+        mods.colorSpeed = 7
+    end
+
     if self.PlayerColorable and mods.colorMode == "rainbow" then
-        return HSVToColor(RealTime() * 70 % 360, 1, 1)
+        return HSVToColor(RealTime() * (10 * mods.colorSpeed) % 360, 1, 1)
     end
 
     if not PS.FlashlightsColorsCache[mods.color] then

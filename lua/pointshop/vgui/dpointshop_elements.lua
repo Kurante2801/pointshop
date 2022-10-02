@@ -519,9 +519,9 @@ function PANEL:Paint(w, h)
             if self:IsHovered() then
                 self.FrameTime = self.FrameTime + 0.5
             end
-
-            surface.DrawTexturedRect(6, 6 + self.FrameTime % 128 - 128, 128, 128)
-            surface.DrawTexturedRect(6, 6 + self.FrameTime % 128, 128, 128)
+            local y = math.Round(self.FrameTime % 128)
+            surface.DrawTexturedRect(6, 6 + y - 128, 128, 128)
+            surface.DrawTexturedRect(6, 6 + y, 128, 128)
         end)
     end
 
