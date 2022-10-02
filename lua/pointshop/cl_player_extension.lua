@@ -1,4 +1,4 @@
-local Player = FindMetaTable('Player')
+local Player = FindMetaTable("Player")
 
 -- items
 function Player:PS_GetItems()
@@ -20,28 +20,28 @@ end
 function Player:PS_BuyItem(item_id)
     if self:PS_HasItem(item_id) then return false end
     if not self:PS_HasPoints(PS.Config.CalculateBuyPrice(self, PS.Items[item_id])) then return false end
-    net.Start('PS_BuyItem')
+    net.Start("PS_BuyItem")
     net.WriteString(item_id)
     net.SendToServer()
 end
 
 function Player:PS_SellItem(item_id)
     if not self:PS_HasItem(item_id) then return false end
-    net.Start('PS_SellItem')
+    net.Start("PS_SellItem")
     net.WriteString(item_id)
     net.SendToServer()
 end
 
 function Player:PS_EquipItem(item_id)
     if not self:PS_HasItem(item_id) then return false end
-    net.Start('PS_EquipItem')
+    net.Start("PS_EquipItem")
     net.WriteString(item_id)
     net.SendToServer()
 end
 
 function Player:PS_HolsterItem(item_id)
     if not self:PS_HasItem(item_id) then return false end
-    net.Start('PS_HolsterItem')
+    net.Start("PS_HolsterItem")
     net.WriteString(item_id)
     net.SendToServer()
 end

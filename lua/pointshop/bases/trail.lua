@@ -10,6 +10,9 @@ BASE.StartWidth = 15
 BASE.EndWidth = 0
 BASE.LifeTime = 4.25
 
+PS.Trails = PS.Trails or {}
+local trails = PS.Trails
+
 function PS:SpriteTrail(ply, color, startW, endW, lifeT, mat)
     local ent = ents.Create("lbg_trail")
     ent:SetColor(color)
@@ -24,16 +27,16 @@ end
 
 function BASE:OnEquip(ply, mods)
     if PS.GamemodeCheck(self) then return end
-    PS.Trails[ply] = PS.Trails[ply] or {}
+    trails[ply] = trails[ply] or {}
     self:OnHolster(ply, mods)
     if ply:PS_IsSpectator(ply) then return end
     local color = self.Color
 
-    PS.Trails[ply] = PS.Trails[ply] or {}
-    SafeRemoveEntity(PS.Trails[ply][self.ID])
-    PS.Trails[ply][self.ID] = PS:SpriteTrail(ply, color, self.StartWidth, self.EndWidth, self.LifeTime, self.Material)
+    trails[ply] = trails[ply] or {}
+    SafeRemoveEntity(trails[ply][self.ID])
+    trails[ply][self.ID] = PS:SpriteTrail(ply, color, self.StartWidth, self.EndWidth, self.LifeTime, self.Material)
 
-    local ent = PS.Trails[ply][self.ID]
+    local ent = trails[ply][self.ID]
     ent:SetItemID(self.ID)
 end
 
@@ -52,19 +55,19 @@ end
 
 function BASE:OnHolster(ply, mods)
     if PS.GamemodeCheck(self) then return end
-    if not PS.Trails[ply] then return end
-    SafeRemoveEntity(PS.Trails[ply][self.ID])
-    PS.Trails[ply][self.ID] = nil
+    if not trails[ply] then return end
+    SafeRemoveEntity(trails[ply][self.ID])
+    trails[ply][self.ID] = nil
 end
 
 function BASE:OnModify(ply, mods)
     if PS.GamemodeCheck(self) then return end
-    if not PS.Trails[ply] or not PS.Trails[ply][self.ID] then return end
+    if not trails[ply] or not trails[ply][self.ID] then return end
 end
 
 function BASE:OnThink(ply, mods)
     if PS.GamemodeCheck(self) then return end
-    if CLIENT or not PS.Trails[ply] or not PS.Trails[ply][self.ID] then return end
+    if CLIENT or not trails[ply] or not trails[ply][self.ID] then return end
 
     if ply:PS_IsSpectator() then
         self:OnHolster(ply, mods)

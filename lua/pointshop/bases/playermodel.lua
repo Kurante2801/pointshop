@@ -15,6 +15,7 @@ function BASE:OnEquip(ply, mods)
     end
 
     ply:SetModel(self.Model)
+    self:SetBodygroups(ply, mods)
     ply:SetupHands()
 end
 
@@ -27,7 +28,6 @@ function BASE:OnSpawn(ply, mods)
     end
 
     self:OnEquip(ply, mods)
-    self:SetBodygroups(ply, mods)
 end
 
 function BASE:OnHolster(ply)

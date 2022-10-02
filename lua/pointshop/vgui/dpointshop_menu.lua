@@ -1220,7 +1220,7 @@ function PANEL:MakeAdminPanel(panel)
 
         net.Start("PS_SetPoints")
         net.WriteEntity(panel.Player)
-        net.WriteUInt(math.Clamp(value, 0, 2147483647), 32)
+        net.WriteUInt(value, 32)
         net.SendToServer()
     end
 end

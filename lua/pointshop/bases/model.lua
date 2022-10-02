@@ -49,6 +49,7 @@ if not CLIENT then
 end
 
 PS.CSModels = PS.CSModels or {}
+local csmodels = PS.CSModels
 
 local empty = {}
 local COLOR_WHITE = Color(255, 255, 255)
@@ -60,12 +61,12 @@ function BASE:OnPlayerDraw(ply, flags, ent, mods)
     if PS.GamemodeCheck(self) or not self.Props or not PS:CanSeeAccessory(ply) then return end
 
     self:SetupModels()
-    self:DrawModels(ply, ent, PS.CSModels[self.ID], mods)
+    self:DrawModels(ply, ent, csmodels[self.ID], mods)
 end
 
 function BASE:OnPreviewDraw(w, h, panel)
     self:SetupModels()
-    self:DrawModels(nil, panel.Entity, PS.CSModels[self.ID], nil)
+    self:DrawModels(nil, panel.Entity, csmodels[self.ID], nil)
 end
 
 function BASE:ModifyClientsideModel(ply, model, pos, ang)
@@ -85,14 +86,14 @@ function BASE:ModifyClientsideModel(ply, model, pos, ang)
 end
 
 function BASE:SetupModels()
-    local models = PS.CSModels[self.ID]
+    local models = csmodels[self.ID]
 
     -- Check if models changed path (were edited by admin)
 
     -- Create
     if not models then
-        PS.CSModels[self.ID] = self:CreateModels(false)
-        models = PS.CSModels[self.ID]
+        csmodels[self.ID] = self:CreateModels(false)
+        models = csmodels[self.ID]
     end
 end
 

@@ -1,19 +1,4 @@
---[[
-	pointshop/cl_init.lua
-	first file included clientside.
-]]
---
-include"sh_init.lua"
-include"cl_player_extension.lua"
-
-include"vgui_new/tdlib.lua"
-include"vgui_new/dpointshop_menu.lua"
-include"vgui_new/dpointshop_elements.lua"
-
-PS.ShopMenu = nil
-PS.ClientsideModels = PS.ClientsideModels or {}
-PS.HoverModel = nil
-PS.HoverModelClientsideModel = nil
+PS.ShopMenu = PS.ShopMenu or nil
 
 PS.AccessoryVisibility = CreateClientConVar("ps_accessoryvisibility", "1", true, true, "Who can see your accessories? 1 = Everyone; 2 = Same Team Only; 3 = Friends Only", 1, 3)
 PS.AccessoryEnabled = CreateClientConVar("ps_accessoryenabled", "1", true, true, "What accessories can you see? 1 = Everyone; 2 = Same Team Only; 3 = Friends Only", 1, 3)
@@ -88,8 +73,6 @@ function PS:CanSeeFollower(target)
     return true
 end
 
-local invalidplayeritems = {}
-
 -- menu stuff
 function PS:ToggleMenu()
     if not IsValid(PS.ShopMenu) then
@@ -106,42 +89,23 @@ function PS:ToggleMenu()
     end
 end
 
-function PS:SetHoverItem(item_id)
-    local ITEM = PS.Items[item_id]
-
-    if ITEM.Model then
-        self.HoverModel = item_id
-        self.HoverModelClientsideModel = ClientsideModel(ITEM.Model, RENDERGROUP_OPAQUE)
-        self.HoverModelClientsideModel:SetNoDraw(true)
-    end
-end
-
-function PS:RemoveHoverItem()
-    self.HoverModel = nil
-    self.HoverModelClientsideModel = nil
-end
-
--- modification stuff
-function PS:ShowColorChooser(item, modifications)
-    -- TODO: Do this
-    local chooser = vgui.Create('DPointShopColorChooser')
-    chooser:SetColor(modifications.color)
-
-    chooser.OnChoose = function(color)
-        modifications.color = color
-        self:SendModifications(item.ID, modifications)
-    end
-end
-
 function PS:SendModifications(item_id, modifications)
-    net.Start('PS_ModifyItem')
+    net.Start("PS_ModifyItem")
     net.WriteString(item_id)
     PS.WriteTable(modifications)
     net.SendToServer()
 end
 
+PS.ModQueue = PS.ModQueue or {}
+function PS:SendModification(id, key, value)
+    self.ModQueue[id] = self.ModQueue[id] or {}
+    self.ModQueue[id][key] = value
+    -- Change values on local player instantly
+    LocalPlayer():GetModifiers(id)[key] = value
+end
+
 -- net hooks
-net.Receive('PS_ToggleMenu', function(length)
+net.Receive("PS_ToggleMenu", function(_)
     PS:ToggleMenu()
 end)
 
@@ -175,13 +139,13 @@ net.Receive("PS_Items", function()
     end
 end)
 
-net.Receive('PS_Points', function(length)
+net.Receive("PS_Points", function(length)
     local ply = net.ReadEntity()
-    local points = net.ReadInt(32)
+    local points = net.ReadUInt(32)
     ply.PS_Points = PS:ValidatePoints(points)
 end)
 
-net.Receive('PS_SendNotification', function(length)
+net.Receive("PS_SendNotification", function(length)
     local str = net.ReadString()
     notification.AddLegacy(str, NOTIFY_GENERIC, 5)
 end)
@@ -223,6 +187,17 @@ hook.Add("InitPostEntity", "PS_VisibilityNetwork", function()
     net.SendToServer()
 end)
 
+hook.Add("Think", "PS_ModQueue", function()
+    if table.IsEmpty(PS.ModQueue) or (PS.LastSentMods and CurTime() - PS.LastSentMods < 1) then return end
+    PS.LastSentMods = CurTime()
+
+    net.Start("PS_ModQueue")
+    net.WriteString(util.TableToJSON(PS.ModQueue))
+    net.SendToServer()
+
+    table.Empty(PS.ModQueue)
+end)
+
 cvars.AddChangeCallback("ps_accessoryvisibility", function()
     net.Start("PS_SetNetworkVisibility")
     net.SendToServer()
@@ -237,44 +212,3 @@ cvars.AddChangeCallback("ps_followervisibility", function()
     net.Start("PS_SetNetworkVisibility")
     net.SendToServer()
 end)
-
---/ PARTICLE EMITTER BUG FIX?!
---
--- Safe ParticleEmitter Josh 'Acecool' Moser
---
--- This should be placed in a CLIENT run directory - such as addons/acecool_particleemitter_override/lua/autorun/client/_particleemitter.lua
--- -- http://facepunch.com/showthread.php?t=1309609&p=42275212#post42275212
---
-function isLoaded()
-    if _pos == null then
-        isLoaded()
-    else
-        if not PARTICLE_EMITTER then
-            PARTICLE_EMITTER = ParticleEmitter
-        end
-
-        function ParticleEmitter(_pos, _use3D)
-            if not _GLOBAL_PARTICLE_EMITTER then
-                _GLOBAL_PARTICLE_EMITTER = {}
-            end
-
-            if _use3D then
-                if not _GLOBAL_PARTICLE_EMITTER.use3D then
-                    _GLOBAL_PARTICLE_EMITTER.use3D = PARTICLE_EMITTER(_pos, true)
-                else
-                    _GLOBAL_PARTICLE_EMITTER.use3D:SetPos(_pos)
-                end
-
-                return _GLOBAL_PARTICLE_EMITTER.use3D
-            else
-                if not _GLOBAL_PARTICLE_EMITTER.use2D then
-                    _GLOBAL_PARTICLE_EMITTER.use2D = PARTICLE_EMITTER(_pos, false)
-                else
-                    _GLOBAL_PARTICLE_EMITTER.use2D:SetPos(_pos)
-                end
-
-                return _GLOBAL_PARTICLE_EMITTER.use2D
-            end
-        end
-    end
-end

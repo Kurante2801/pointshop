@@ -5,121 +5,118 @@
 --
 resource.AddWorkshop("2860434667")
 
-include"sh_init.lua"
-include"sv_player_extension.lua"
-include"sv_manifest.lua"
+-- Make code a bit more bearable
+local function NetMessage(msg, callback)
+    util.AddNetworkString(msg)
+    net.Receive(msg, callback)
+end
 
--- net hooks
-net.Receive('PS_BuyItem', function(length, ply)
-    ply:PS_BuyItem(net.ReadString())
+NetMessage("PS_BuyItem", function(_, ply) ply:PS_BuyItem(net.ReadString()) end)
+NetMessage("PS_SellItem", function(_, ply) ply:PS_SellItem(net.ReadString()) end)
+NetMessage("PS_EquipItem", function(_, ply) ply:PS_EquipItem(net.ReadString()) end)
+NetMessage("PS_HolsterItem", function(_, ply) ply:PS_HolsterItem(net.ReadString()) end)
+NetMessage("PS_ModifyItem", function(_, ply) ply:PS_ModifyItem(net.ReadString(), PS.ReadTable()) end)
+NetMessage("PS_ModQueue", function(_, ply)
+    local tbl = util.JSONToTable(net.ReadString())
+    if not tbl then return end
+
+    for id, new_mods in pairs(tbl) do
+        local mods = ply:PS_GetModifiers(id)
+        table.Merge(mods, new_mods)
+        ply:PS_ModifyItem(id, mods, true)
+    end
 end)
-
-net.Receive('PS_SellItem', function(length, ply)
-    ply:PS_SellItem(net.ReadString())
+NetMessage("PS_SetNetworkVisibility", function(_, ply)
+    ply:SetNWInt("ps_accessoryvisibility", ply:GetInfoNum("ps_accessoryvisibility", 1))
+    ply:SetNWInt("ps_trailvisibility", ply:GetInfoNum("ps_trailvisibility", 1))
+    ply:SetNWInt("ps_followervisibility", ply:GetInfoNum("ps_followervisibility", 1))
 end)
-
-net.Receive('PS_EquipItem', function(length, ply)
-    ply:PS_EquipItem(net.ReadString())
-end)
-
-net.Receive('PS_HolsterItem', function(length, ply)
-    ply:PS_HolsterItem(net.ReadString())
-end)
-
-net.Receive('PS_ModifyItem', function(length, ply)
-    ply:PS_ModifyItem(net.ReadString(), PS.ReadTable())
-end)
-
--- player to player
-net.Receive('PS_SendPoints', function(length, ply)
-    local other = net.ReadEntity()
-    local points = math.Clamp(net.ReadInt(32), 0, 1000000)
+-- Points from player to player
+NetMessage("PS_SendPoints", function(_, ply)
     if not PS.Config.CanPlayersGivePoints then return end
-    if not points or points == 0 then return end
-    if not other or not IsValid(other) or not other:IsPlayer() then return end
-    if not ply or not IsValid(ply) or not ply:IsPlayer() then return end
 
-    if not ply:PS_HasPoints(points) then
-        ply:PS_Notify("You can't afford to give away ", points, " of your ", PS.Config.PointsName, ".")
+    local other net.ReadEntity()
+    local points = PS:ValidatePoints(net.ReadUInt(32))
+    if points == 0 then return end
+    if not IsValid(other) or not other:IsPlayer() then return end
 
-        return
-    end
-
-    ply.PS_LastGavePoints = ply.PS_LastGavePoints or 0
-
-    if ply.PS_LastGavePoints + 5 > CurTime() then
+    if ply.PS_LastGavePoints and CurTime() - ply.PS_LastGavePoints < 5 then
         ply:PS_Notify("Slow down! You can't give away points that fast.")
-
         return
     end
+    ply.PS_LastGavePoints = CurTime()
 
     ply:PS_TakePoints(points)
     ply:PS_Notify("You gave ", other:Nick(), " ", points, " of your ", PS.Config.PointsName, ".")
     other:PS_GivePoints(points)
     other:PS_Notify(ply:Nick(), " gave you ", points, " of their ", PS.Config.PointsName, ".")
-    ply.PS_LastGavePoints = CurTime()
 end)
-
--- admin points
-net.Receive('PS_GivePoints', function(length, ply)
+-- Points from admin to player
+NetMessage("PS_GivePoints", function(_, ply)
+    if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
     local other = net.ReadEntity()
-    local points = net.ReadInt(32)
+
     if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
     local admin_allowed = PS.Config.AdminCanAccessAdminTab and ply:IsAdmin()
     local super_admin_allowed = PS.Config.SuperAdminCanAccessAdminTab and ply:IsSuperAdmin()
 
+    local points = PS:ValidatePoints(net.ReadUInt(32))
     if (admin_allowed or super_admin_allowed) and other and points and IsValid(other) and other:IsPlayer() then
         other:PS_GivePoints(points)
-        other:PS_Notify(ply:Nick(), ' gave you ', points, ' ', PS.Config.PointsName, '.')
+        other:PS_Notify(string.format("%s gave you %s %s.", ply:Name(), points, PS.Config.PointsName))
     end
 end)
-
-net.Receive('PS_TakePoints', function(length, ply)
+NetMessage("PS_TakePoints", function(_, ply)
+    if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
     local other = net.ReadEntity()
-    local points = net.ReadInt(32)
+
     if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
     local admin_allowed = PS.Config.AdminCanAccessAdminTab and ply:IsAdmin()
     local super_admin_allowed = PS.Config.SuperAdminCanAccessAdminTab and ply:IsSuperAdmin()
 
+    local points = PS:ValidatePoints(net.ReadUInt(32))
     if (admin_allowed or super_admin_allowed) and other and points and IsValid(other) and other:IsPlayer() then
         other:PS_TakePoints(points)
-        other:PS_Notify(ply:Nick(), ' took ', points, ' ', PS.Config.PointsName, ' from you.')
+        other:PS_Notify(string.format("%s took %s %s from you.", ply:Name(), points, PS.Config.PointsName))
     end
 end)
-
-net.Receive('PS_SetPoints', function(length, ply)
+NetMessage("PS_SetPoints", function(_, ply)
+    print("FUCK")
+    if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
     local other = net.ReadEntity()
-    local points = net.ReadInt(32)
+
     if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
     local admin_allowed = PS.Config.AdminCanAccessAdminTab and ply:IsAdmin()
     local super_admin_allowed = PS.Config.SuperAdminCanAccessAdminTab and ply:IsSuperAdmin()
 
+    local points = PS:ValidatePoints(net.ReadUInt(32))
     if (admin_allowed or super_admin_allowed) and other and points and IsValid(other) and other:IsPlayer() then
         other:PS_SetPoints(points)
-        other:PS_Notify(ply:Nick(), ' set your ', PS.Config.PointsName, ' to ', points, '.')
+        other:PS_Notify(string.format("%s set your %s to %s.", ply:Name(), PS.Config.PointsName, points))
     end
 end)
-
--- admin items
-net.Receive('PS_GiveItem', function(length, ply)
+NetMessage("PS_SetPoints", function(_, ply)
+    if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
     local other = net.ReadEntity()
-    local item_id = net.ReadString()
+
     if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
     local admin_allowed = PS.Config.AdminCanAccessAdminTab and ply:IsAdmin()
     local super_admin_allowed = PS.Config.SuperAdminCanAccessAdminTab and ply:IsSuperAdmin()
 
-    if (admin_allowed or super_admin_allowed) and other and item_id and PS.Items[item_id] and IsValid(other) and other:IsPlayer() and not other:PS_HasItem(item_id) then
+    local item_id = net.ReadString()
+    if (admin_allowed or super_admin_allowed) and other and item_id and PS.Items[item_id] and IsValid(other) and other:IsPlayer() then
         other:PS_GiveItem(item_id)
     end
 end)
-
-net.Receive('PS_TakeItem', function(length, ply)
+NetMessage("PS_TakeItem", function(_, ply)
+    if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
     local other = net.ReadEntity()
-    local item_id = net.ReadString()
+
     if not PS.Config.AdminCanAccessAdminTab and not PS.Config.SuperAdminCanAccessAdminTab then return end
     local admin_allowed = PS.Config.AdminCanAccessAdminTab and ply:IsAdmin()
     local super_admin_allowed = PS.Config.SuperAdminCanAccessAdminTab and ply:IsSuperAdmin()
 
+    local item_id = net.ReadString()
     if (admin_allowed or super_admin_allowed) and other and item_id and PS.Items[item_id] and IsValid(other) and other:IsPlayer() and other:PS_HasItem(item_id) then
         -- holster it first without notificaiton
         other.PS_Items[item_id].Equipped = false
@@ -129,14 +126,7 @@ net.Receive('PS_TakeItem', function(length, ply)
     end
 end)
 
-net.Receive("PS_SetNetworkVisibility", function(_, ply)
-    ply:SetNWInt("ps_accessoryvisibility", ply:GetInfoNum("ps_accessoryvisibility", 1))
-    ply:SetNWInt("ps_trailvisibility", ply:GetInfoNum("ps_trailvisibility", 1))
-    ply:SetNWInt("ps_followervisibility", ply:GetInfoNum("ps_followervisibility", 1))
-end)
-
 -- hooks
--- Ability to use any button to open pointshop.
 hook.Add("PlayerButtonDown", "PS_ToggleKey", function(ply, btn)
     if PS.Config.ShopKey and PS.Config.ShopKey ~= "" then
         local psButton = _G["KEY_" .. string.upper(PS.Config.ShopKey)]
@@ -147,17 +137,17 @@ hook.Add("PlayerButtonDown", "PS_ToggleKey", function(ply, btn)
     end
 end)
 
-hook.Add('PlayerSpawn', 'PS_PlayerSpawn', function(ply)
+hook.Add("PlayerSpawn", "PS_PlayerSpawn", function(ply)
     ply:PS_PlayerSpawn()
 end)
 
-hook.Add('PlayerDeath', 'PS_PlayerDeath', function(ply)
+hook.Add("PlayerDeath", "PS_PlayerDeath", function(ply)
     ply:PS_PlayerDeath()
 end)
 
 hook.Add("PlayerInitialSpawn", "FullLoadSetup", function(ply)
-    hook.Add("SetupMove", ply, function(this, ply, _, cmd)
-        if this == ply and not cmd:IsForced() then
+    hook.Add("SetupMove", ply, function(this, _ply, _, cmd)
+        if this == _ply and not cmd:IsForced() then
             hook.Remove("SetupMove", this)
             hook.Run("PlayerFullLoad", this)
         end
@@ -172,97 +162,26 @@ hook.Add("PlayerFullLoad", "PS_NetReady", function(ply)
     ply:PS_NetReady()
 end)
 
-hook.Add('PlayerDisconnected', 'PS_PlayerDisconnected', function(ply)
+hook.Add("PlayerDisconnected", "PS_PlayerDisconnected", function(ply)
     ply:PS_PlayerDisconnected()
 end)
 
-hook.Add('PlayerSay', 'PS_PlayerSay', function(ply, text)
-    if string.len(PS.Config.ShopChatCommand) > 0 then
-        if string.sub(text, 0, string.len(PS.Config.ShopChatCommand)) == PS.Config.ShopChatCommand then
-            ply:PS_ToggleMenu()
-
-            return ''
-        end
+hook.Add("PlayerSay", "PS_PlayerSay", function(ply, text)
+    if PS.Config.ShopChatCommand and #PS.Config.ShopChatCommand > 0 and string.lower(text) == string.lower(PS.Config.ShopChatCommand) then
+        ply:PS_ToggleMenu()
+        return ""
     end
 end)
 
--- ugly networked strings
-util.AddNetworkString('PS_Items')
-util.AddNetworkString('PS_Points')
-util.AddNetworkString('PS_BuyItem')
-util.AddNetworkString('PS_SellItem')
-util.AddNetworkString('PS_EquipItem')
-util.AddNetworkString('PS_HolsterItem')
-util.AddNetworkString('PS_ModifyItem')
-util.AddNetworkString('PS_SendPoints')
-util.AddNetworkString('PS_GivePoints')
-util.AddNetworkString('PS_TakePoints')
-util.AddNetworkString('PS_SetPoints')
-util.AddNetworkString('PS_GiveItem')
-util.AddNetworkString('PS_TakeItem')
-util.AddNetworkString('PS_SendNotification')
-util.AddNetworkString('PS_ToggleMenu')
-util.AddNetworkString('PS_SetNetworkVisibility')
+util.AddNetworkString("PS_Items")
+util.AddNetworkString("PS_Points")
+util.AddNetworkString("PS_SendNotification")
+util.AddNetworkString("PS_ToggleMenu")
 
 -- console commands
 concommand.Add(PS.Config.ShopCommand, function(ply, cmd, args)
     ply:PS_ToggleMenu()
 end)
-
-concommand.Add('ps_clear_points', function(ply, cmd, args)
-    if IsValid(ply) then return end -- only allowed from server console
-
-    for _, ply in pairs(player.GetAll()) do
-        ply:PS_SetPoints(0)
-    end
-
-    sql.Query("DELETE FROM playerpdata WHERE infoid LIKE '%PS_Points%'")
-end)
-
-concommand.Add('ps_clear_items', function(ply, cmd, args)
-    if IsValid(ply) then return end -- only allowed from server console
-
-    for _, ply in pairs(player.GetAll()) do
-        ply.PS_Items = {}
-        ply:PS_SendItems()
-    end
-
-    sql.Query("DELETE FROM playerpdata WHERE infoid LIKE '%PS_Items%'")
-end)
-
--- version checker
-PS.CurrentBuild = 0
-PS.LatestBuild = 0
-PS.BuildOutdated = false
-PS.Trails = PS.Trails or {}
-
-local function CompareVersions()
-    if PS.CurrentBuild < PS.LatestBuild then
-        MsgN('PointShop is out of date!')
-        MsgN('Local version: ' .. PS.CurrentBuild .. ', Latest version: ' .. PS.LatestBuild)
-        PS.BuildOutdated = true
-    else
-        MsgN('PointShop is on the latest version.')
-    end
-end
-
-function PS:CheckVersion()
-    if file.Exists('data/pointshop_build.txt', 'GAME') then
-        PS.CurrentBuild = tonumber(file.Read('data/pointshop_build.txt', 'GAME')) or 0
-    end
-
-    local url = self.Config.Branch .. 'data/pointshop_build.txt'
-
-    http.Fetch(url, function(content)
-        -- onSuccess
-        PS.LatestBuild = tonumber(content) or 0
-        CompareVersions()
-    end, function(failCode)
-        -- onFailure
-        MsgN('PointShop couldn\'t check version.')
-        MsgN(url, ' returned ', failCode)
-    end)
-end
 
 -- data providers
 function PS:LoadDataProvider()

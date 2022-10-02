@@ -1,20 +1,10 @@
---[[
-	pointshop/sh_init.lua
-	first file included on both states.
-]]
---
-PS = PS or {}
-PS.__index = PS
 PS.Bases = PS.Bases or {}
 PS.Items = PS.Items or {}
 PS.Categories = PS.Categories or {}
-PS.ClientsideModels = {}
-include("sh_config.lua")
-include("sh_player_extension.lua")
 
 -- validation
 function PS:ValidateItems(items)
-    if type(items) ~= "table" then return {} end
+    if not istable(items) then return {} end
 
     -- Remove any items that no longer exist
     for item_id, item in pairs(items) do
@@ -27,9 +17,11 @@ function PS:ValidateItems(items)
 end
 
 function PS:ValidatePoints(points)
-    if type(points) ~= "number" then return 0 end
+    if not isnumber(points) then
+        return 0
+    end
 
-    return points >= 0 and points or 0
+    return math.Clamp(points, 0, 0xFFFFFFFF)
 end
 
 -- Utils
@@ -45,10 +37,6 @@ end
 function PS:Initialize()
     if SERVER then
         self:LoadDataProvider()
-    end
-
-    if SERVER and self.Config.CheckVersion then
-        self:CheckVersion()
     end
 
     self:LoadItems()
@@ -370,24 +358,7 @@ hook.Add("Move", "PS_Move", function(ply, data)
 end)
 
 -- Color utils
-PS.ValidHEX = {
-    ["0"] = true,
-    ["A"] = true,
-    ["1"] = true,
-    ["B"] = true,
-    ["2"] = true,
-    ["C"] = true,
-    ["3"] = true,
-    ["D"] = true,
-    ["4"] = true,
-    ["E"] = true,
-    ["5"] = true,
-    ["F"] = true,
-    ["6"] = true,
-    ["7"] = true,
-    ["8"] = true,
-    ["9"] = true,
-}
+PS.ValidHEX = { ["0"] = true, ["1"] = true, ["2"] = true, ["3"] = true, ["4"] = true, ["5"] = true, ["6"] = true, ["7"] = true, ["8"] = true, ["9"] = true, ["A"] = true, ["B"] = true, ["C"] = true, ["D"] = true, ["E"] = true, ["F"] = true, }
 
 PS.SanitizeHEX = function(hex, parseAlpha)
     -- If given invalid, return white

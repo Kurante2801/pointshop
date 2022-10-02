@@ -1,7 +1,7 @@
 PS_ITEM_EQUIP = 1
 PS_ITEM_HOLSTER = 2
 PS_ITEM_MODIFY = 3
-local Player = FindMetaTable('Player')
+local Player = FindMetaTable("Player")
 
 function Player:PS_PlayerSpawn()
     if not self:PS_CanPerformAction() or self:PS_IsSpectator() then return end
@@ -68,15 +68,11 @@ function Player:PS_NetReady()
 end
 
 function Player:PS_PlayerDisconnected()
-    PS.ClientsideModels[self] = nil
-
-    if timer.Exists('PS_PointsOverTime_' .. self:UniqueID()) then
-        timer.Destroy('PS_PointsOverTime_' .. self:UniqueID())
-    end
+    timer.Remove("PS_PointsOverTime_" .. self:SteamID64())
 end
 
 function Player:PS_Save()
-    PS:SetPlayerData(self, self.PS_Points, self.PS_Items)
+    PS:SetPlayerData(self, PS:ValidatePoints(self.PS_Points), self.PS_Items)
 end
 
 function Player:PS_LoadData()
@@ -84,8 +80,9 @@ function Player:PS_LoadData()
     self.PS_Items = {}
 
     PS:GetPlayerData(self, function(points, items)
-        self.PS_Points = points
+        self.PS_Points = PS:ValidatePoints(points)
         self.PS_Items = items
+        -- Send data to other connected players
         self:PS_SendPoints()
         self:PS_SendItems()
     end)
@@ -97,19 +94,19 @@ end
 
 -- points
 function Player:PS_GivePoints(points)
-    self.PS_Points = self.PS_Points + points
+    self.PS_Points = PS:ValidatePoints(self.PS_Points + points)
     PS:GivePlayerPoints(self, points)
     self:PS_SendPoints()
 end
 
 function Player:PS_TakePoints(points)
-    self.PS_Points = self.PS_Points - points >= 0 and self.PS_Points - points or 0
+    self.PS_Points = PS:ValidatePoints(self.PS_Points - points)
     PS:TakePlayerPoints(self, points)
     self:PS_SendPoints()
 end
 
 function Player:PS_SetPoints(points)
-    self.PS_Points = points
+    self.PS_Points = PS:ValidatePoints(self.PS_Points - points)
     PS:SetPlayerPoints(self, points)
     self:PS_SendPoints()
 end
@@ -151,40 +148,33 @@ end
 function Player:PS_BuyItem(item_id)
     local ITEM = PS.Items[item_id]
     if not ITEM then return false end
+    --if self:PS_HasItem(item_id) then return end
+
     local points = PS.Config.CalculateBuyPrice(self, ITEM)
     if not self:PS_HasPoints(points) then return false end
     if not self:PS_CanPerformAction(item_id) then return end
 
     if ITEM.AdminOnly and not self:IsAdmin() then
-        self:PS_Notify('This item is Admin only!')
+        self:PS_Notify("This item is Admin only!")
 
         return false
     end
 
-    if ITEM.AllowedUserGroups and #ITEM.AllowedUserGroups > 0 then
-        if not table.HasValue(ITEM.AllowedUserGroups, self:PS_GetUsergroup()) then
-            self:PS_Notify('You\'re not in the right group to buy this item!')
-
-            return false
-        end
+    if ITEM.AllowedUserGroups and #ITEM.AllowedUserGroups > 0 and not table.HasValue(ITEM.AllowedUserGroups, self:PS_GetUsergroup()) then
+        self:PS_Notify("You're not in the right group to buy this item!")
+        return false
     end
 
     local CATEGORY = PS.Categories[ITEM.Category]
 
-    if CATEGORY.AllowedUserGroups and #CATEGORY.AllowedUserGroups > 0 then
-        if not table.HasValue(CATEGORY.AllowedUserGroups, self:PS_GetUsergroup()) then
-            self:PS_Notify('You\'re not in the right group to buy this item!')
-
-            return false
-        end
+    if CATEGORY.AllowedUserGroups and #CATEGORY.AllowedUserGroups > 0 and not table.HasValue(CATEGORY.AllowedUserGroups, self:PS_GetUsergroup()) then
+        self:PS_Notify("You're not in the right group to buy this item!")
+        return false
     end
 
-    if CATEGORY.CanPlayerSee then
-        if not CATEGORY:CanPlayerSee(self) then
-            self:PS_Notify('You\'re not allowed to buy this item!')
-
-            return false
-        end
+    if CATEGORY.CanPlayerSee and not CATEGORY:CanPlayerSee(self) then
+        self:PS_Notify("You\'re not allowed to buy this item!")
+        return false
     end
 
     -- should exist but we'll check anyway
@@ -198,19 +188,19 @@ function Player:PS_BuyItem(item_id)
         end
 
         if not allowed then
-            self:PS_Notify(message or 'You\'re not allowed to buy this item!')
+            self:PS_Notify(message or "You're not allowed to buy this item!")
 
             return false
         end
     end
 
     self:PS_TakePoints(points)
-    self:PS_Notify('Bought ', ITEM.Name, ' for ', points, ' ', PS.Config.PointsName)
+    self:PS_Notify(string.format("Bought %s for %s %s", ITEM.Name, points, PS.Config.PointsName))
     ITEM:OnBuy(self)
     hook.Call("PS_ItemPurchased", nil, self, item_id)
 
     if ITEM.SingleUse then
-        self:PS_Notify('Single use item. You\'ll have to buy this item again next time!')
+        self:PS_Notify("Single use item. You'll have to buy this item again next time!")
 
         return
     end
@@ -235,7 +225,7 @@ function Player:PS_SellItem(item_id)
         end
 
         if not allowed then
-            self:PS_Notify(message or 'You\'re not allowed to sell this item!')
+            self:PS_Notify(message or "You're not allowed to sell this item!")
 
             return false
         end
@@ -246,7 +236,7 @@ function Player:PS_SellItem(item_id)
     ITEM:OnHolster(self)
     ITEM:OnSell(self)
     hook.Call("PS_ItemSold", nil, self, item_id)
-    self:PS_Notify('Sold ', ITEM.Name, ' for ', points, ' ', PS.Config.PointsName)
+    self:PS_Notify(string.format("Sold %s for %s %s", ITEM.Name, points, PS.Config.PointsName))
 
     return self:PS_TakeItem(item_id)
 end
@@ -297,14 +287,14 @@ function Player:PS_EquipItem(item_id)
     if not self:PS_CanPerformAction(item_id) then return false end
     local ITEM = PS.Items[item_id]
 
-    if type(ITEM.CanPlayerEquip) == 'function' then
+    if isfunction(ITEM.CanPlayerEquip) then
         allowed, message = ITEM:CanPlayerEquip(self)
-    elseif type(ITEM.CanPlayerEquip) == 'boolean' then
+    elseif isbool(ITEM.CanPlayerEquip) then
         allowed = ITEM.CanPlayerEquip
     end
 
     if not allowed then
-        self:PS_Notify(message or 'You\'re not allowed to equip this item!')
+        self:PS_Notify(message or "You're not allowed to equip this item!")
 
         return false
     end
@@ -327,22 +317,6 @@ function Player:PS_EquipItem(item_id)
         for id, item in pairs(self.PS_Items) do
             if item_id ~= id and PS.Items[id].Slot and PS.Items[id].Slot == PS.Items[item_id].Slot and self.PS_Items[id].Equipped then
                 self:PS_HolsterItem(id)
-            end
-        end
-    end
-
-    if CATEGORY.SharedCategories then
-        local ConCatCats = CATEGORY.Name
-
-        for p, c in pairs(CATEGORY.SharedCategories) do
-            if p ~= #CATEGORY.SharedCategories then
-                ConCatCats = ConCatCats .. ', ' .. c
-            else
-                if #CATEGORY.SharedCategories ~= 1 then
-                    ConCatCats = ConCatCats .. ', and ' .. c
-                else
-                    ConCatCats = ConCatCats .. ' and ' .. c
-                end
             end
         end
     end
@@ -372,29 +346,29 @@ function Player:PS_HolsterItem(item_id)
     self.PS_Items[item_id].Equipped = false
     local ITEM = PS.Items[item_id]
 
-    if type(ITEM.CanPlayerHolster) == 'function' then
+    if isfunction(ITEM.CanPlayerHolster) then
         allowed, message = ITEM:CanPlayerHolster(self)
-    elseif type(ITEM.CanPlayerHolster) == 'boolean' then
+    elseif isbool(ITEM.CanPlayerHolster) then
         allowed = ITEM.CanPlayerHolster
     end
 
     if not allowed then
-        self:PS_Notify(message or 'You\'re not allowed to holster this item!')
+        self:PS_Notify(message or "You're not allowed to holster this item!")
 
         return false
     end
 
     ITEM:OnHolster(self)
-    self:PS_Notify('Holstered ', ITEM.Name, '.')
+    self:PS_Notify("Holstered ", ITEM.Name, ".")
     hook.Call("PS_ItemUpdated", nil, self, item_id, PS_ITEM_HOLSTER)
     PS:SavePlayerItem(self, item_id, self.PS_Items[item_id])
     self:PS_SendItems()
 end
 
-function Player:PS_ModifyItem(item_id, modifications)
+function Player:PS_ModifyItem(item_id, modifications, fromQueue)
     if not PS.Items[item_id] then return false end
     if not self:PS_HasItem(item_id) then return false end
-    if not type(modifications) == "table" then return false end
+    if not istable(modifications) then return false end
     if not self:PS_CanPerformAction(item_id) then return false end
     local ITEM = PS.Items[item_id]
 
@@ -413,25 +387,37 @@ function Player:PS_ModifyItem(item_id, modifications)
     ITEM:OnModify(self, self.PS_Items[item_id].Modifiers)
     hook.Call("PS_ItemUpdated", nil, self, item_id, PS_ITEM_MODIFY, modifications)
     PS:SavePlayerItem(self, item_id, self.PS_Items[item_id])
-    self:PS_SendItems()
+
+    if fromQueue then
+        local targets = {}
+        for _, ply in ipairs(player.GetAll()) do
+            if ply ~= self then
+                table.insert(targets, ply)
+            end
+        end
+
+        self:PS_SendItems(targets)
+    else
+        self:PS_SendItems()
+    end
 end
 
 -- menu stuff
 function Player:PS_ToggleMenu(show)
-    net.Start('PS_ToggleMenu')
+    net.Start("PS_ToggleMenu")
     net.Send(self)
 end
 
 -- send stuff
 function Player:PS_SendPoints()
-    net.Start('PS_Points')
+    net.Start("PS_Points")
     net.WriteEntity(self)
-    net.WriteInt(self.PS_Points, 32)
+    net.WriteUInt(self.PS_Points, 32)
     net.Broadcast()
 end
 
 -- Yogpod taught me this
-function Player:PS_SendItems()
+function Player:PS_SendItems(target)
     local items = util.TableToJSON(self.PS_Items)
     local compressed = util.Compress(items) or items
     local len = string.len(compressed)
@@ -447,7 +433,12 @@ function Player:PS_SendItems()
         net.WriteBool(i == parts)
         net.WriteUInt(size, 16)
         net.WriteData(compressed:sub(start + 1, endbyte + 1), size)
-        net.Broadcast()
+
+        if target then
+            net.Send(target)
+        else
+            net.Broadcast()
+        end
     end
 end
 
