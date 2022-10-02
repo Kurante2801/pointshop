@@ -204,39 +204,33 @@ function BASE:OnCustomizeSetup(panel, mods)
     mods.ang = mods.ang or Angle()
     mods.scale = mods.scale or 1
 
-    self:SetupThinker(panel, mods, {
-        pos = Vector(mods.pos), ang = Angle(mods.ang), scale = mods.scale
-    }, function(a, b)
-        return not PS.TablesEqual(a, b)
-    end, function(reference, copy)
-        return {
-            pos = Vector(reference.pos),
-            ang = Angle(reference.ang),
-            scale = reference.scale
-        }
-    end)
-
     PS.AddSlider(panel, "Position X", mods.pos.x, self.PositionMinMax[1], self.PositionMinMax[2], 0.5, function(value)
         mods.pos.x = value
+        PS:SendModification(self.ID, "pos", mods.pos)
     end)
     PS.AddSlider(panel, "Position Y", mods.pos.y, self.PositionMinMax[1], self.PositionMinMax[2], 0.5, function(value)
         mods.pos.y = value
+        PS:SendModification(self.ID, "pos", mods.pos)
     end)
     PS.AddSlider(panel, "Position Z", mods.pos.z, self.PositionMinMax[1], self.PositionMinMax[2], 0.5, function(value)
         mods.pos.z = value
+        PS:SendModification(self.ID, "pos", mods.pos)
     end):DockMargin(0, 0, 0, 32)
     PS.AddSlider(panel, "Angle P", mods.ang.p, -180, 180, 0.5, function(value)
-        mods.ang.x = value
+        mods.ang.p = value
+        PS:SendModification(self.ID, "ang", mods.ang)
     end)
     PS.AddSlider(panel, "Angle Y", mods.ang.y, -180, 180, 0.5, function(value)
         mods.ang.y = value
+        PS:SendModification(self.ID, "ang", mods.ang)
     end)
     PS.AddSlider(panel, "Angle R", mods.ang.r, -180, 180, 0.5, function(value)
-        mods.ang.z = value
+        mods.ang.r = value
+        PS:SendModification(self.ID, "ang", mods.ang)
     end):DockMargin(0, 0, 0, 32)
 
     PS.AddSlider(panel, "Scale", mods.scale, self.ScaleMinMax[1], self.ScaleMinMax[2], 0.05, function(value)
-        mods.scale = value
+        PS:SendModification(self.ID, "scale", value)
     end):SetDefaultValue(1)
 end
 

@@ -101,7 +101,7 @@ function PS:SendModification(id, key, value)
     self.ModQueue[id] = self.ModQueue[id] or {}
     self.ModQueue[id][key] = value
     -- Change values on local player instantly
-    LocalPlayer():GetModifiers(id)[key] = value
+    LocalPlayer():PS_GetModifiers(id)[key] = value
 end
 
 -- net hooks

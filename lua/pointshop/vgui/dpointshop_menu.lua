@@ -399,24 +399,6 @@ function PANEL:Init()
         self:SetDataText("Settings", "")
     end
 
-    self.Theme = self:Add("DButton")
-    self.Theme.DarkMat = Material("lbg_pointshop/derma/dark_mode.png", "noclamp smooth")
-    self.Theme.LightMat = Material("lbg_pointshop/derma/light_mode.png", "noclamp smooth")
-    self.Theme:TDLib()
-        :ClearPaint()
-        :Text("")
-        :SetupTransition("DarkTheme", 6, function() return PS.ActiveTheme == "default" end)
-        :SetupTransition("LightTheme", 6, function() return PS.ActiveTheme == "dark" end)
-        :On("DoClick", function(this)
-            self:SetTheme(PS.ActiveTheme == "default" and "dark" or "default")
-        end)
-        :On("PaintOver", function(this, w, h)
-            PS.ShadowedImage(this.DarkMat, 0, 0, w, h, Color(255, 255, 255, 255 * this.DarkTheme))
-            PS.ShadowedImage(this.LightMat, 0, 0, w, h, Color(255, 255, 255, 255 * this.LightTheme))
-        end)
-        PS:FadeHover(self.Theme, "Foreground1Color", 125, 6, 6)
-
-
     -- Left bar
     self.Left = self:Add("DPanel")
     self.Left:Dock(LEFT)
@@ -484,6 +466,7 @@ function PANEL:Init()
                 this.PressedOnce = true
                 this:SetHoverText("Click again to confirm")
                 this:SetHoverIcon("lbg_pointshop/derma/warning.png", 18, 18)
+                this:SetThemeHoverColor("ErrorColor", 255)
             end
         else
             ply:PS_BuyItem(this.Item.ID)
@@ -516,6 +499,7 @@ function PANEL:Init()
     self.Buy.SetItem = function(this, item)
         this.Item = item
         this.PressedOnce = false
+        this:SetThemeHoverColor("Foreground1Color")
 
         if not item then
             this:SetText("Purchase")
@@ -636,16 +620,13 @@ function PANEL:Init()
     self.Equip.HasItemEquipped = function(this) return this.Item and LocalPlayer():PS_HasItemEquipped(this.Item.ID) end
     self.Equip:TDLib()
         :ClearPaint()
-        --:SetupTransition("HolsterItem", 6, self.Equip.HasItemEquipped)
         :On("Paint", function(this, w, h)
             if this:IsEnabled() then
                 if this:HasItemEquipped() then
-                    draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("SuccessColor"))
+                    draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("SecondaryColor"))
                 else
                     draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(this._main))
                 end
-                --draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(this._main), 255 * this.HolsterItem))
-                --draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("ErrorColor"), 255 * (1 - this.HolsterItem)))
             else
                 draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(this._dis))
             end
@@ -800,8 +781,6 @@ function PANEL:PerformLayout()
 
     self.Settings:SetPos(w - self.BarHeight * 2, 0)
     self.Settings:SetSize(self.BarHeight, self.BarHeight)
-    self.Theme:SetPos(w - self.BarHeight * 3, 0)
-    self.Theme:SetSize(self.BarHeight, self.BarHeight)
 end
 
 function PANEL:Paint(w, h)

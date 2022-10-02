@@ -63,25 +63,6 @@ PS.MasterBase = {
     ToString = function(this)
         return "[base] " .. this.ID
     end,
-    SetupThinker = function(this, panel, mods_reference, mods_copy, compare_func, on_change)
-        local thinker = panel:Add("EditablePanel")
-        thinker:SetMouseInputEnabled(false)
-        thinker.Mods = mods_copy
-        thinker.LastSent = CurTime()
-        thinker.Think = function(_this)
-            if CurTime() - _this.LastSent < 0.5 then return end
-
-            if compare_func(mods_reference, mods_copy) then
-                _this.LastSent = CurTime()
-                on_change(mods_reference, mods_copy)
-
-                net.Start("PS_ModifyItem")
-                net.WriteString(this.ID)
-                net.WriteString(util.TableToJSON(mods_reference))
-                net.SendToServer()
-            end
-        end
-    end,
 }
 
 local emptyFunc = function() end

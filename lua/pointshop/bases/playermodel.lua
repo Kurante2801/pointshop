@@ -113,17 +113,9 @@ function BASE:SanitizeTable(mods)
 end
 
 function BASE:OnCustomizeSetup(panel, mods)
-    self:SetupThinker(panel, mods, {
-        skin = mods.skin, bodygroups = table.Copy(mods.bodygroups)
-    }, function(a, b)
-        return not PS.TablesEqual(a, b)
-    end, function(reference, copy)
-        return table.Copy(reference)
-    end)
-
     if self.Skins and #self.Skins > 1 then
         PS.AddSelector(panel, "Skin", mods.skin or self.Skins[1], self.Skins, function(value)
-            mods.skin = value
+            PS:SendModification(self.ID, "skin", value)
         end)
     end
 
@@ -132,6 +124,7 @@ function BASE:OnCustomizeSetup(panel, mods)
             if #group.values > 1 then
                 PS.AddSelector(panel, group.name, mods.bodygroups[group.id] or group.values[0], group.values, function(value)
                     mods.bodygroups[group.id] = value
+                    PS:SendModification(self.ID, "bodygroups", mods.bodygroups)
                 end)
             end
         end

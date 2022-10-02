@@ -78,20 +78,22 @@ function BASE:OnCustomizeSetup(panel, mods)
     mods.color = mods.color or "#FFFFFFFF"
     mods.colorMode = mods.colorMode or "color"
 
-    self:SetupThinker(panel, mods, {
-        colorMode = mods.colorMode, color = mods.color
-    }, function(a, b)
-        return not PS.TablesEqual(a, b)
-    end, function(reference, copy)
-        return table.Copy(reference)
-    end)
+    local values = { "Color" }
+    local datas = { "color" }
 
-    local values = { "Color", "Player Color", "Rainbow" }
-    local datas = { "color", "player", "rainbow" }
+    if self.PlayerColorable then
+        table.insert(values, "Player Color")
+        table.insert(datas, "player")
+    end
+
+    if self.RainbowColorable then
+        table.insert(values, "Rainbow")
+        table.insert(datas, "rainbow")
+    end
 
     PS.AddColorModeSelector(panel, "Trail Color Mode", PS.HEXtoRGB(mods.color or ""), true, values[table.KeyFromValue(datas, mods.colorMode) or 1], values, datas, function(v, d, c)
-        mods.colorMode = d
-        mods.color = "#" .. PS.RGBtoHEX(c, true)
+        PS:SendModification(self.ID, "colorMode", d)
+        PS:SendModification(self.ID, "color", "#" .. PS.RGBtoHEX(c, true))
     end)
 end
 
