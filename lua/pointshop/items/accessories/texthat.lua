@@ -108,7 +108,7 @@ function ITEM:OnCustomizeSetup(panel, mods)
         table.insert(datas, "rainbow")
     end
 
-    PS.AddColorModeSelector(panel, "Flashlight Color Mode", PS.HEXtoRGB(mods.color or ""), mods.colorSpeed, true, mods.colorMode, values, datas, function(v, d, c, s)
+    PS.AddColorModeSelector(panel, "Text Color Mode", PS.HEXtoRGB(mods.color or ""), mods.colorSpeed, true, mods.colorMode, values, datas, function(v, d, c, s)
         PS:SendModification(self.ID, "colorMode", d)
         PS:SendModification(self.ID, "color", "#" .. PS.RGBtoHEX(c, true))
         PS:SendModification(self.ID, "colorSpeed", s)
