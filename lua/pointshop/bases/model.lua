@@ -70,18 +70,6 @@ function BASE:OnPreviewDraw(w, h, panel)
 end
 
 function BASE:ModifyClientsideModel(ply, model, pos, ang)
-    local mods = ply:PS_GetModifiers(self.ID)
-    mods.pos = mods.pos or Vector()
-    mods.ang = mods.ang or Angle()
-    mods.scale = mods.scale or 1
-
-    -- Offset
-    pos = pos + ang:Forward() * mods.pos.x - ang:Right() * mods.pos.y + ang:Up() * mods.pos.z
-    ang:RotateAroundAxis(ang:Forward(), mods.ang.p)
-    ang:RotateAroundAxis(ang:Right(), -mods.ang.y)
-    ang:RotateAroundAxis(ang:Up(), -mods.ang.r)
-    model:SetModelScale(mods.scale)
-
     return model, pos, ang
 end
 
@@ -109,10 +97,22 @@ function BASE:DrawModels(ply, ent, models, mods)
         if not pos or not ang then continue end
 
         model.LastPaint = CurTime()
-        -- Apply modifications from mods and prop
         pos = pos + ang:Forward() * data.pos.x - ang:Right() * data.pos.y + ang:Up() * data.pos.z
+
+        model, pos, ang = self:ModifyClientsideModel(ent, model, pos, ang)
+
         if ply then
-            model, pos, ang = self:ModifyClientsideModel(ply, model, pos, ang)
+            -- Apply mofications
+            mods.pos = mods.pos or Vector()
+            mods.ang = mods.ang or Angle()
+            mods.scale = mods.scale or 1
+
+            -- Offset
+            pos = pos + ang:Forward() * mods.pos.x - ang:Right() * mods.pos.y + ang:Up() * mods.pos.z
+            ang:RotateAroundAxis(ang:Forward(), mods.ang.p)
+            ang:RotateAroundAxis(ang:Right(), -mods.ang.y)
+            ang:RotateAroundAxis(ang:Up(), -mods.ang.r)
+            model:SetModelScale(mods.scale)
         else
             model:SetModelScale(1)
         end
