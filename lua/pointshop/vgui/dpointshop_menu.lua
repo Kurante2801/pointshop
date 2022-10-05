@@ -851,7 +851,7 @@ function PANEL:PopulateCategories()
         button:SetTall(46)
 
         if cat.Material then
-            button.Mat = Material(cat.Material, "noclamp smooth")
+            button.Mat = Material(cat.Material, "smooth")
         elseif cat.Icon then
             button.Mat = Material(string.format("icon16/%s.png", cat.Icon))
         end
@@ -890,10 +890,18 @@ function PANEL:PopulateCategories()
             end)
         end
 
-        if cat.Subcategories then
-            self:MakeSubcategories(button, cat)
+        local custom = hook.Run("PS_CustomCategoryTab", cat)
+        if IsValid(custom) then
+            button.CategoryPanel = custom
+            custom:SetParent(self.Container)
+            custom:Dock(FILL)
+            custom:Hide()
         else
-            self:MakeCategory(button, cat)
+            if cat.Subcategories then
+                self:MakeSubcategories(button, cat)
+            else
+                self:MakeCategory(button, cat)
+            end
         end
     end
 
