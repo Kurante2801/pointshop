@@ -97,7 +97,7 @@ function BASE:DrawModels(ply, ent, models, mods)
         if not pos or not ang then continue end
 
         model.LastPaint = CurTime()
-        pos = pos + ang:Forward() * data.pos.x - ang:Right() * data.pos.y + ang:Up() * data.pos.z
+        pos = pos + ang:Up() * data.pos.x + ang:Right() * data.pos.y + ang:Forward() * data.pos.z
 
         model, pos, ang = self:ModifyClientsideModel(ent, model, pos, ang)
 
@@ -108,18 +108,18 @@ function BASE:DrawModels(ply, ent, models, mods)
             mods.scale = mods.scale or 1
 
             -- Offset
-            pos = pos + ang:Forward() * mods.pos.x - ang:Right() * mods.pos.y + ang:Up() * mods.pos.z
+            pos = pos + ang:Forward() * mods.pos.x + ang:Right() * mods.pos.y + ang:Up() * mods.pos.z
             ang:RotateAroundAxis(ang:Forward(), mods.ang.p)
-            ang:RotateAroundAxis(ang:Right(), -mods.ang.y)
-            ang:RotateAroundAxis(ang:Up(), -mods.ang.r)
+            ang:RotateAroundAxis(ang:Right(), mods.ang.y)
+            ang:RotateAroundAxis(ang:Up(), mods.ang.r)
             model:SetModelScale(mods.scale)
         else
             model:SetModelScale(1)
         end
 
         ang:RotateAroundAxis(ang:Forward(), data.ang.p)
-        ang:RotateAroundAxis(ang:Right(), -data.ang.y)
-        ang:RotateAroundAxis(ang:Up(), -data.ang.r)
+        ang:RotateAroundAxis(ang:Right(), data.ang.y)
+        ang:RotateAroundAxis(ang:Up(), data.ang.r)
         local matrix = Matrix()
         matrix:SetScale(data.scale or Vector(1, 1, 1))
 

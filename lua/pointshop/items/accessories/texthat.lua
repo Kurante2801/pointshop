@@ -9,6 +9,26 @@ ITEM.CharLimit = 32
 ITEM.PlayerColorable = true -- Can trail color be the same as PLAYER:GetPlayerColor
 ITEM.RainbowColorable = true -- Can trail color be a rainbow
 
+ITEM.Props = {
+    ["bubble"] = {
+        model = "models/extras/info_speech.mdl",
+        bone = "ValveBiped.Bip01_Head1",
+        pos = Vector(0, 0, 15),
+        ang = Angle(90, -90, 0),
+        scale = Vector(0.425, 0.425, 0.425),
+        color = Color(255, 255, 255),
+        alpha = 1,
+        colorabletype = nil,
+        material = nil
+    }
+}
+
+ITEM.CameraData = {
+    pos = Vector(60, 60, 70),
+    target = Vector(0, 0, 70),
+    fov = 25
+}
+
 function ITEM:SanitizeTable(mods)
     if not self.Modify then return {} end
 
@@ -43,26 +63,6 @@ else
         size = 32, shadow = false, antialias = true,
     })
 end
-
-ITEM.Props = {
-    ["bubble"] = {
-        model = "models/extras/info_speech.mdl",
-        bone = "ValveBiped.Bip01_Head1",
-        pos = Vector(15, 0, 0),
-        ang = Angle(90, 90, 0),
-        scale = Vector(0.425, 0.425, 0.425),
-        color = Color(255, 255, 255),
-        alpha = 1,
-        colorabletype = nil,
-        material = nil
-    }
-}
-
-ITEM.CameraData = {
-    pos = Vector(60, 60, 70),
-    target = Vector(0, 0, 70),
-    fov = 25
-}
 
 local COLOR_WHITE = Color(255, 255, 255)
 local draw_ShadowedText = PS.ShadowedText

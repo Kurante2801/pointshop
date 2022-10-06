@@ -17,7 +17,7 @@ ITEM.Props = {
     ["briefcase"] = {
         model = "models/props_c17/SuitCase_Passenger_Physics.mdl",
         bone = "ValveBiped.Bip01_Spine2",
-        pos = Vector(1.2, -5, 7.5),
+        pos = Vector(7.5, 5, -1.2),
         ang = Angle(0, 0, 0),
         scale = Vector(0.8, 0.8, 0.8),
     },

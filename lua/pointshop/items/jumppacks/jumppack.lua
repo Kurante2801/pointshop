@@ -16,7 +16,7 @@ ITEM.Props = {
     ["jetstream_sam"] = {
         model = "models/xqm/jetengine.mdl",
         bone = "ValveBiped.Bip01_Spine2",
-        pos = Vector(5, -9.75, 0),
+        pos = Vector(0, 9.75, 5),
         ang = Angle(0, 0, 0),
         scale = Vector(0.5, 0.5, 0.5),
     },

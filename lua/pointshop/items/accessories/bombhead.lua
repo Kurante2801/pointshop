@@ -1,5 +1,6 @@
 local ITEM = {}
 ITEM.Base = "model"
+ITEM.ID = "bombhead"
 
 -- Bones: https://wiki.facepunch.com/gmod/ValveBiped_Bones
 
@@ -18,7 +19,7 @@ ITEM.Props = {
     ["bomb"] = {
         model = "models/Combine_Helicopter/helicopter_bomb01.mdl",
         bone = "ValveBiped.Bip01_Head1",
-        pos = Vector(3, -2.427, 0),
+        pos = Vector(0, 2.427, 3),
         ang = Angle(0, 0, 0),
         scale = Vector(0.425, 0.425, 0.425),
         color = Color(255, 255, 255),
