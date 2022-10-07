@@ -50,6 +50,8 @@ end
 
 PS.CSModels = PS.CSModels or {}
 local csmodels = PS.CSModels
+-- DModelPanel creates a new ClientsideModel per panel
+PS.DModelPanelPlayer = PS.DModelPanelPlayer or nil
 
 local empty = {}
 local COLOR_WHITE = Color(255, 255, 255)
@@ -254,43 +256,43 @@ function BASE:OnPanelSetup(panel)
     local mdl = panel:Add("DModelPanel")
     mdl:SetMouseInputEnabled(false)
     mdl:Dock(FILL)
-    mdl:SetModel(PS.Config.GetDefaultPlayermodel())
-    mdl.FarZ = 32768
+    mdl.OnRemove = function() end -- don't delete the cached model!
+    if not IsValid(PS.DModelPanelPlayer) then
+        mdl:SetModel(PS.Config.GetDefaultPlayermodel())
+        PS.DModelPanelPlayer = mdl.Entity
+        local ent = mdl.Entity
 
-    local ent = mdl.Entity
-    ent.GetPlayerColor = function() return Vector(1, 1, 1) end
+        -- There is no way to stop a DModelPanel from breathing
+        -- so instead we manually set each bone's position manually
+        -- (found by searching gmod discord)
+        ent:SetupBones()
+        local bones = {}
+        for i = 0, ent:GetBoneCount() - 1 do
+            if ent:GetBoneName(i) == "__INVALIDBONE_" then continue end
 
-    -- Rotates entity (needs to be done before freezing model)
-    local data = self.CameraData
-    if data.angle then
-        mdl.Entity:SetAngles(data.angle)
-    end
+            local matrix = ent:GetBoneMatrix(i)
+            if not matrix then continue end
 
-    -- There is no way to stop a DModelPanel from breathing
-    -- so instead we manually set each bone's position manually
-    -- (found by searching gmod discord)
-    ent:SetupBones()
-    local bones = {}
-    for i = 0, ent:GetBoneCount() - 1 do
-        if ent:GetBoneName(i) == "__INVALIDBONE_" then continue end
+            local mat = Matrix()
 
-        local matrix = ent:GetBoneMatrix(i)
-        if not matrix then continue end
+            mat:SetTranslation(matrix:GetTranslation())
+            mat:SetAngles(matrix:GetAngles())
 
-        local mat = Matrix()
-
-        mat:SetTranslation(matrix:GetTranslation())
-        mat:SetAngles(matrix:GetAngles())
-
-        bones[i] = mat
-    end
-
-    -- Stops model from breathing
-    ent:AddCallback("BuildBonePositions", function(this)
-        for id, matrix in pairs(bones) do
-            ent:SetBoneMatrix(id, matrix)
+            bones[i] = mat
         end
-    end)
+
+        -- Stops model from breathing
+        ent:AddCallback("BuildBonePositions", function(this)
+            for id, matrix in pairs(bones) do
+                ent:SetBoneMatrix(id, matrix)
+            end
+        end)
+
+        ent.GetPlayerColor = function() return Vector(1, 1, 1) end
+    end
+    mdl.Entity = PS.DModelPanelPlayer
+
+    mdl.FarZ = 32768
 
     -- Stops model from rotating
     mdl.LayoutEntity = function(this, _ent)
@@ -301,17 +303,24 @@ function BASE:OnPanelSetup(panel)
     end
 
     mdl.OnRemove = function(this)
-        SafeRemoveEntity(this.Entity)
         for _, model in pairs(this.Props) do
             SafeRemoveEntity(model)
         end
     end
 
     -- Focus playermodel in different positions
+    local data = self.CameraData
     if data then
-        mdl:SetCamPos(data.pos)
         mdl:SetLookAt(data.target)
         mdl:SetFOV(data.fov)
+
+        if data.angle then
+            local pos = Vector(data.pos)
+            pos:Rotate(-data.angle)
+            mdl:SetCamPos(pos)
+        else
+            mdl:SetCamPos(data.pos)
+        end
     end
 
     -- Add models
