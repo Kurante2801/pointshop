@@ -110,7 +110,7 @@ function BASE:DrawModels(ply, ent, models, mods)
             mods.scale = mods.scale or 1
 
             -- Offset
-            pos = pos + ang:Forward() * mods.pos.x + ang:Right() * mods.pos.y + ang:Up() * mods.pos.z
+            pos = pos - ang:Up() * mods.pos.x - ang:Right() * mods.pos.y + ang:Forward() * mods.pos.z
             ang:RotateAroundAxis(ang:Forward(), mods.ang.p)
             ang:RotateAroundAxis(ang:Right(), mods.ang.y)
             ang:RotateAroundAxis(ang:Up(), mods.ang.r)
