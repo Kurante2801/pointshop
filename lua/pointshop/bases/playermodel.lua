@@ -44,11 +44,32 @@ function BASE:OnModify(ply, mods)
 end
 
 local empty = {}
+function BASE:OnPanelSetup(panel)
+    panel.ModelPanel = panel:Add("DModelPanel")
+    panel.ModelPanel:SetPos(6, 6)
+    panel.ModelPanel:SetSize(128, 128)
+    panel.ModelPanel:SetMouseInputEnabled(false)
+    panel.ModelPanel:SetModel(self.Model)
+    self:SetBodygroups(panel.ModelPanel.Entity, empty)
+
+    local PrevMins, PrevMaxs = panel.ModelPanel.Entity:GetRenderBounds()
+    panel.ModelPanel:SetCamPos(PrevMins:Distance(PrevMaxs) * Vector(0.5, 0.5, 0.5))
+    panel.ModelPanel:SetLookAt((PrevMaxs + PrevMins) / 2)
+
+    panel.ModelPanel.LayoutEntity = function(this, ent)
+        if this:GetParent():IsHovered() then
+            ent:SetAngles(Angle(0, ent:GetAngles().y + 1, 0))
+        end
+
+        ent.GetPlayerColor = function() return LocalPlayer():GetPlayerColor() end
+    end
+end
+
 function BASE:OnPreviewDraw(w, h, panel)
     if panel:GetModel() ~= self.Model then
         panel:SetModel(self.Model)
+        self:SetBodygroups(panel.Entity, empty)
     end
-    self:SetBodygroups(panel.Entity, empty)
 end
 
 function BASE:SetBodygroups(ply, mods)
