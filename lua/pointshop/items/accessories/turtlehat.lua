@@ -12,7 +12,7 @@ ITEM.CameraData = {
 }
 
 ITEM.Props = {
-    ["snowman"] = {
+    ["turtle"] = {
         model = "models/props/de_tides/Vending_turtle.mdl",
         bone = "ValveBiped.Bip01_Head1",
         pos = Vector(0, 0, 6),
