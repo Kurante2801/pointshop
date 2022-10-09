@@ -6,6 +6,7 @@ CATEGORY.Name = "Accessories"
 CATEGORY.Description = ""
 CATEGORY.Order = 1
 
+-- Description supports multi-line!
 CATEGORY.Subcategories = {}
 
 CATEGORY.Subcategories["user"] = {
@@ -17,7 +18,7 @@ CATEGORY.Subcategories["user"] = {
 
 CATEGORY.Subcategories["admin"] = {
     Name = "Admin Accessories",
-    Description = "Accessories for admins, this should support multiline in theory, IN THEORY communism works, in theory",
+    Description = "Accessories for admins",
     Order = 2,
 }
 
