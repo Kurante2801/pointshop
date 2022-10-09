@@ -21,6 +21,8 @@ BASE.Props = {
 }
 
 function BASE:SanitizeTable(mods)
+    if not self.Modify then return {} end
+
     if not isvector(mods.pos) then
         mods.pos = Vector(0, 0, 0)
     end
@@ -33,10 +35,34 @@ function BASE:SanitizeTable(mods)
         mods.scale = 1
     end
 
+    local colorableData = {}
+    if mods.colorableData then
+
+        for id, prop in pairs(self.Props) do
+            if prop.colorabletype == "mods" then
+                local data = mods.colorableData[id]
+                if not data then continue end
+
+                colorableData[id] = {
+                    colorMode = isstring(data.colorMode) and data.colorMode or nil,
+                    color = isstring(data.color) and PS.SanitizeHEX(data.color, true) or nil,
+                    colorSpeed = isnumber(data.colorSpeed) and math.Clamp(data.colorSpeed, 1, 14) or nil,
+                }
+            end
+
+        end
+
+    end
+
+    if table.Count(colorableData) < 1 then
+        colorableData = nil
+    end
+
     return {
         pos = Vector(math.Clamp(mods.pos.x, self.PositionMinMax[1], self.PositionMinMax[2]), math.Clamp(mods.pos.y, self.PositionMinMax[1], self.PositionMinMax[2]), math.Clamp(mods.pos.z, self.PositionMinMax[1], self.PositionMinMax[2])),
         ang = Angle(math.Clamp(mods.ang.p, -180, 180), math.Clamp(mods.ang.y, -180, 180), math.Clamp(mods.ang.r, -180, 180)),
-        scale = math.Clamp(mods.scale, self.ScaleMinMax[1], self.ScaleMinMax[2])
+        scale = math.Clamp(mods.scale, self.ScaleMinMax[1], self.ScaleMinMax[2]),
+        colorableData = colorableData
     }
 end
 
@@ -52,6 +78,8 @@ PS.CSModels = PS.CSModels or {}
 local csmodels = PS.CSModels
 -- DModelPanel creates a new ClientsideModel per panel
 PS.DModelPanelPlayer = PS.DModelPanelPlayer or nil
+PS.ModelsColorCache = PS.ModelsColorCache or {}
+local colorCache = PS.ModelsColorCache
 
 local empty = {}
 local COLOR_WHITE = Color(255, 255, 255)
@@ -133,18 +161,36 @@ function BASE:DrawModels(ply, ent, models, mods)
         model:SetupBones()
         model:EnableMatrix("RenderMultiply", matrix)
 
-        -- Apply color
-        if data.colorabletype == "playercolor" then
-            local color = ply:GetPlayerColor()
+        local colorabletype = data.colorabletype
+        local color = data.color or COLOR_WHITE
+        local colorSpeed = data.speed
+
+        if colorabletype == "mods" and mods.colorableData then
+            local colData = mods.colorableData[model.ID]
+
+            if colData then
+                colorabletype = colData.colorMode
+                colorSpeed = colData.colorSpeed or 7
+                color = colData.color or "#FFFFFF"
+
+                if not colorCache[color] then
+                    colorCache[color] = PS.HEXtoRGB(color)
+                end
+
+                color = colorCache[color]
+            end
+        end
+
+        if colorabletype == "player" then
+            color = ply:GetPlayerColor()
             render.SetBlend(1)
             render.SetColorModulation(color.x, color.y, color.z)
-        elseif data.colorabletype == "rainbow" then
-            local color = HSVToColor(RealTime() * (data.speed or 70) % 360, 1, 1)
+        elseif colorabletype == "rainbow" then
+            color = HSVToColor(RealTime() * (colorSpeed * 10) % 360, 1, 1)
             render.SetBlend(1)
             render.SetColorModulation(color.r / 255, color.g / 255, color.b / 255)
         else
             render.SetBlend(data.alpha or 1)
-            local color = data.color or COLOR_WHITE
             render.SetColorModulation(color.r / 255, color.g / 255, color.b / 255)
         end
 
@@ -167,10 +213,10 @@ function BASE:CreateModels()
     if not self.Props then return end
     for id, prop in pairs(self.Props) do
         -- We show ERRORs so admins know when model is missing
-        --[[if not file.Exists(prop.model, "GAME") and not show_error_mdl then
+        if not file.Exists(prop.model, "GAME") and not LocalPlayer():IsAdmin() then
             print(string.format("[LBG PointShop] Model %s from %s does not exist, skipping...", prop_id, item.ID))
             continue
-        end]]
+        end
 
         local mdl = ClientsideModel(prop.model)
         if not mdl then
@@ -233,9 +279,30 @@ function BASE:OnCustomizeSetup(panel, mods)
         PS:SendModification(self.ID, "ang", mods.ang)
     end):DockMargin(0, 0, 0, 32)
 
-    PS.AddSlider(panel, "Scale", mods.scale, self.ScaleMinMax[1], self.ScaleMinMax[2], 0.05, function(value)
+    local scale = PS.AddSlider(panel, "Scale", mods.scale, self.ScaleMinMax[1], self.ScaleMinMax[2], 0.05, function(value)
         PS:SendModification(self.ID, "scale", value)
-    end):SetDefaultValue(1)
+    end)
+    scale:SetDefaultValue(1)
+    scale:DockMargin(0, 0, 0, 32)
+
+    local colorables = mods.colorableData or empty
+    local values = { "Color", "Player Color", "Rainbow" }
+    local datas = { "color", "player", "rainbow" }
+
+    for id, prop in pairs(self.Props) do
+        if prop.colorabletype ~= "mods" then continue end
+        local data = colorables[id] or empty
+
+        PS.AddColorModeSelector(panel, string.format("Color (%s)", id), PS.HEXtoRGB(data.color or ""), data.colorSpeed or 7, false, data.colorMode or "color", values, datas, function(v, d, c, s)
+            colorables[id] = {
+                colorMode = d,
+                color = "#" .. PS.RGBtoHEX(c, true),
+                colorSpeed = s,
+            }
+
+            PS:SendModification(self.ID, "colorableData", colorables)
+        end)
+    end
 end
 
 function BASE:OnPanelPaint(panel)
