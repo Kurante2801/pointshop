@@ -6,6 +6,13 @@ BASE.Modify = true
 BASE.PositionMinMax = { -10, 10 }
 BASE.ScaleMinMax = { 0.1, 1.75 }
 
+BASE.VisibilitySettings = {
+    VisibilityText = "Who can see your Accessories?",
+    DisplayText = "Display Accessories from: ",
+    CVarSuffix = "accessory",
+    FirstPersonOptional = false
+}
+
 BASE.Props = {
     ["bomb"] = {
         model = "models/Combine_Helicopter/helicopter_bomb01.mdl",
@@ -88,7 +95,7 @@ local surface_SetMaterial = surface.SetMaterial
 local surface_DrawTexturedRect = surface.DrawTexturedRect
 
 function BASE:OnPlayerDraw(ply, flags, ent, mods)
-    if PS.GamemodeCheck(self) or not self.Props or not PS:CanSeeAccessory(ply) then return end
+    if PS.GamemodeCheck(self) or not self.Props or not ply:PS_CanSeeItem(self.ID) then return end
 
     self:SetupModels()
     self:DrawModels(ply, ent, csmodels[self.ID], mods)

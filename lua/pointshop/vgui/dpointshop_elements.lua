@@ -1152,3 +1152,51 @@ function PANEL:OnValueChanged(color)
 end
 
 vgui.Register("PS_ColorModal", PANEL, "EditablePanel")
+
+PANEL = {}
+AccessorFunc(PANEL, "_yes", "TrueText", FORCE_STRING)
+AccessorFunc(PANEL, "_no", "FalseText", FORCE_STRING)
+AccessorFunc(PANEL, "_back", "ThemeBackgroundColor", FORCE_STRING)
+
+function PANEL:Init()
+    self:SetTrueText("True")
+    self:SetFalseText("False")
+    self:SetValue(false)
+    self:SetThemeBackgroundColor("Foreground2Color")
+    self:SetupTransition("BoolActive", 6, function(this) return this._bool end)
+end
+
+function PANEL:SetValue(bool)
+    self:SetText(bool and self._yes or self._no)
+    self._bool = bool
+end
+
+function PANEL:GetValue()
+    return self._bool
+end
+
+function PANEL:Paint(w, h)
+    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._back)))
+    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._main), 255 * self.BoolActive))
+    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._hover), self._hoverA * self.MouseHover))
+    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._down), self._downA * self.ButtonDown))
+end
+
+function PANEL:GetContentSize()
+    surface.SetFont(self:GetFont())
+    local wT, hT = surface.GetTextSize(self._yes)
+    local wF, hF = surface.GetTextSize(self._no)
+
+    return math.max(wT, wF), math.Max(hT, hF)
+end
+
+function PANEL:DoClick()
+    self:SetValue(not self._bool)
+    self:OnValueChanged(self._bool)
+end
+
+function PANEL:OnValueChanged(bool)
+    -- Override
+end
+
+vgui.Register("PS_ButtonBool", PANEL, "PS_Button")

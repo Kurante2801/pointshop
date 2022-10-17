@@ -4,7 +4,7 @@ BASE.Material = "pointshop/masks/gman_alyx.png"
 BASE.Scale = 1
 
 function BASE:OnPlayerDraw(ply, flags, ent, mods)
-    if PS.GamemodeCheck(self) or not PS:CanSeeAccessory(ply) then return end
+    if PS.GamemodeCheck(self) or not ply:PS_CanSeeItem(self.ID) then return end
 
     self:DrawMask(ent or ply)
 end
@@ -51,6 +51,14 @@ function BASE:DrawMask(ent)
     self:DrawQuad(pos, ang, 10, 10, COLOR_WHITE)
     ang:RotateAroundAxis(ang:Up(), 180)
     self:DrawQuad(pos, ang, 10, 10, COLOR_WHITE)
+end
+
+if CLIENT then
+    local dis = GetConVar("ps_display_accessory")
+
+    function BASE:CanPlayerSee(target, isFirstPerson)
+        return PS.CanSeeItem(target, dis:GetInt(), target:GetNWInt("ps_visibility_accessory"), isFirstPerson)
+    end
 end
 
 return PS:RegisterBase(BASE)

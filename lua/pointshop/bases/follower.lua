@@ -3,6 +3,13 @@ BASE.ID = "follower"
 
 BASE.Model = "models/Gibs/HGIBS.mdl"
 
+BASE.VisibilitySettings = {
+    VisibilityText = "Who can see your Followers?",
+    DisplayText = "Display Followers from: ",
+    CVarSuffix = "follower",
+    FirstPersonOptional = true
+}
+
 function BASE:CreateEnt(ply, mods)
     local ent = ents.Create("lbg_follower")
     ent:SetOwner(ply)

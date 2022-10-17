@@ -1,73 +1,39 @@
 PS.ShopMenu = PS.ShopMenu or nil
 
-PS.AccessoryVisibility = CreateClientConVar("ps_accessoryvisibility", "1", true, true, "Who can see your accessories? 1 = Everyone; 2 = Same Team Only; 3 = Friends Only", 1, 3)
-PS.AccessoryEnabled = CreateClientConVar("ps_accessoryenabled", "1", true, true, "What accessories can you see? 1 = Everyone; 2 = Same Team Only; 3 = Friends Only", 1, 3)
-
-PS.TrailVisibility = CreateClientConVar("ps_trailvisibility", "1", true, true, "Who can see your trails? 1 = Everyone; 2 = Same Team Only; 3 = Friends Only", 1, 3)
-PS.TrailEnabled = CreateClientConVar("ps_trailenabled", "1", true, true, "What trails can you see? 1 = Everyone; 2 = Same Team Only; 3 = Friends Only", 1, 3)
-
-PS.FollowerVisibility = CreateClientConVar("ps_followervisibility", "1", true, true, "Who can see your followers? 1 = Everyone; 2 = Same Team Only; 3 = Friends Only", 1, 3)
-PS.FollowerEnabled = CreateClientConVar("ps_followerenabled", "1", true, true, "What followers can you see? 1 = Everyone; 2 = Same Team Only; 3 = Friends Only", 1, 3)
-
-local enabled, visibility
-function PS:CanSeeAccessory(target)
-    local ply = LocalPlayer()
-    if target == ply then return true end
-
-    enabled = self.AccessoryEnabled:GetInt()
-    if enabled == 2 and ply:Team() ~= target:Team() then
-        return false
-    elseif enabled == 3 and target:GetFriendStatus() ~= "friend" then
-        return false
+PS_VIS_FIRSTPERSON, PS_VIS_OTHERTEAMS, PS_VIS_NONFRIENDS = 1, 2, 4
+function PS.CanSeeItem(target, localVisibility, targetVisibility, isFirstPerson)
+    local ply = LocalPlayer():GetViewEntity()
+    if not IsValid(ply) or not ply:IsPlayer() then
+        ply = LocalPlayer()
     end
 
-    visibility = target:GetNWInt("ps_accessoryvisibility", 3)
-    if visibility == 2 and ply:Team() ~= target:Team() then
-        return false
-    elseif visibility == 3 and target:GetFriendStatus() ~= "friend" then
-        return false
+    if target == ply then
+        if isFirstPerson then
+            return bit.band(localVisibility, PS_VIS_FIRSTPERSON) == PS_VIS_FIRSTPERSON
+        else
+            return true
+        end
     end
 
-    return true
-end
+    local status = target:GetFriendStatus()
+    if status == "blocked" then return false end -- target is blocked on Steam
 
-function PS:CanSeeTrail(target)
-    local ply = LocalPlayer()
-    if target == ply then return true end
-
-    enabled = self.TrailEnabled:GetInt()
-    if enabled == 2 and ply:Team() ~= target:Team() then
-        return false
-    elseif enabled == 3 and target:GetFriendStatus() ~= "friend" then
-        return false
+    -- Test for local visibility
+    if bit.band(localVisibility, PS_VIS_OTHERTEAMS) ~= PS_VIS_OTHERTEAMS and ply:Team() ~= target:Team() then
+        return false -- ply and target are on different team
     end
 
-    visibility = target:GetNWInt("ps_trailvisibility", 3)
-    if visibility == 2 and ply:Team() ~= target:Team() then
-        return false
-    elseif visibility == 3 and target:GetFriendStatus() ~= "friend" then
-        return false
+    if bit.band(localVisibility, PS_VIS_NONFRIENDS) ~= PS_VIS_NONFRIENDS and target:GetFriendStatus() ~= "friend" then
+        return false -- ply and target are not friends
     end
 
-    return true
-end
-
-function PS:CanSeeFollower(target)
-    local ply = LocalPlayer()
-    if target == ply then return true end
-
-    enabled = self.FollowerEnabled:GetInt()
-    if enabled == 2 and ply:Team() ~= target:Team() then
-        return false
-    elseif enabled == 3 and target:GetFriendStatus() ~= "friend" then
-        return false
+    -- Test for target visibility
+    if bit.band(targetVisibility, PS_VIS_OTHERTEAMS) ~= PS_VIS_OTHERTEAMS and ply:Team() ~= target:Team() then
+        return false -- ply and target are on different team
     end
 
-    visibility = target:GetNWInt("ps_followervisibility", 3)
-    if visibility == 2 and ply:Team() ~= target:Team() then
-        return false
-    elseif visibility == 3 and target:GetFriendStatus() ~= "friend" then
-        return false
+    if bit.band(targetVisibility, PS_VIS_NONFRIENDS) ~= PS_VIS_NONFRIENDS and target:GetFriendStatus() ~= "friend" then
+        return false -- ply and target are not friends
     end
 
     return true

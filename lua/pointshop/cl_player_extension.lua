@@ -1,5 +1,12 @@
 local Player = FindMetaTable("Player")
 
+function Player:PS_CanSeeItem(item_id, isFirstPerson)
+    local ITEM = PS.Items[item_id]
+    if not ITEM then return false end
+
+    return ITEM:CanPlayerSee(self, isFirstPerson)
+end
+
 -- items
 function Player:PS_GetItems()
     return self.PS_Items or {}

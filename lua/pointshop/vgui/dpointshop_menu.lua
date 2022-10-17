@@ -272,20 +272,20 @@ function PS.AddSelector(panel, text, value, values, callback)
 
     container.buttons = {}
     for _, v in ipairs(values) do
-        container.button = container.grid:Add("PS_Button")
-        container.button:SetText(v)
-        container.button:SetTall(32)
-        container.button:SetupTransition("Selected", 6, function() return value == v end)
-        container.button.Paint = function(_this, w, h)
+        local button = container.grid:Add("PS_Button")
+        button:SetText(v)
+        button:SetTall(32)
+        button:SetupTransition("Selected", 6, function() return value == v end)
+        button.Paint = function(_this, w, h)
             draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
             draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 255 * _this.Selected))
         end
-        container.button.DoClick = function()
+        button.DoClick = function()
             value = v
             callback(v)
         end
 
-        table.insert(container.buttons, container.button)
+        table.insert(container.buttons, button)
     end
 
     container.grid:TDLib():On("PerformLayout", function(_this)
@@ -367,6 +367,43 @@ function PS.AddTextEntry(panel, text, value, charLimit, callback)
         draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
         derma.SkinHook("Paint", "TextEntry", this, w, h)
     end
+end
+
+function PS.AddFlagsSelector(panel, text, value, flags, trueTexts, falseTexts, callback)
+    local container = PS.AddTextArea(panel, text)
+
+    container.grid = container:Add("DIconLayout")
+    container.grid:Dock(TOP)
+    container.grid:SetSpaceX(6)
+    container.grid:SetSpaceY(6)
+
+    container.buttons = {}
+    for i, flag in ipairs(flags) do
+        local button = container.grid:Add("PS_ButtonBool")
+        button:SetTrueText(trueTexts[i])
+        button:SetFalseText(falseTexts[i])
+        button:SetValue(bit.band(value, flag) == flag)
+        button:SizeToContents()
+        button:SetTall(32)
+
+        button.OnValueChanged = function(this, bool)
+            if bool then
+                value = bit.bor(value, flag)
+            else
+                value = bit.bxor(value, flag)
+            end
+
+            callback(value)
+        end
+
+        table.insert(container.buttons, button)
+    end
+
+    container.grid:TDLib():On("PerformLayout", function(_this)
+        container:SetTall(_this:GetTall())
+    end)
+
+    return container
 end
 
 local PANEL = {}
@@ -1099,36 +1136,31 @@ function PANEL:MakeSettingsPanel(panel)
     panel:DockMargin(12, 12, 0, 12)
     panel.Paint = emptyfunc
 
-    local values = { "Everyone", "Same Team Only", "Friends Only" }
-    PS.AddComboBox(panel, "Who can see your accessories?", PS.AccessoryVisibility:GetInt(), values, { 1, 2, 3 }, function(_, data)
-        PS.AccessoryVisibility:SetInt(data)
-    end).ComboBox:SetSortItems(false)
+    for _, base_id in pairs(PS.BaseVisibilities) do
+        local base = PS.Bases[base_id]
+        if not base then continue end
 
-    local cbElement = PS.AddComboBox(panel, "What accessories can you see?", PS.AccessoryEnabled:GetInt(), values, { 1, 2, 3 }, function(_, data)
-        PS.AccessoryEnabled:SetInt(data)
-    end)
-    cbElement.ComboBox:SetSortItems(false)
-    cbElement:DockMargin(0, 0, 0, 18)
+        if base.VisibilitySettings then
+            -- Visibility
+            local flags = { PS_VIS_NONFRIENDS, PS_VIS_OTHERTEAMS }
+            local yTexts = { "Everyone", "All Teams", "First Person" }
+            local fTexts = { "Friends Only", "Same Teams Only", "Third Person Only" }
 
-    PS.AddComboBox(panel, "Who can see your trails?", PS.TrailVisibility:GetInt(), values, { 1, 2, 3 }, function(_, data)
-        PS.TrailVisibility:SetInt(data)
-    end).ComboBox:SetSortItems(false)
+            local vis = GetConVar("ps_visibility_" .. base.VisibilitySettings.CVarSuffix)
+            PS.AddFlagsSelector(panel, base.VisibilitySettings.VisibilityText, vis:GetInt(), flags, yTexts, fTexts, function(value)
+                vis:SetInt(value)
+            end)
 
-    cbElement = PS.AddComboBox(panel, "What trails can you see?", PS.TrailEnabled:GetInt(), values, { 1, 2, 3 }, function(_, data)
-        PS.TrailEnabled:SetInt(data)
-    end)
-    cbElement.ComboBox:SetSortItems(false)
-    cbElement:DockMargin(0, 0, 0, 18)
-
-    PS.AddComboBox(panel, "Who can see your followers?", PS.FollowerVisibility:GetInt(), values, { 1, 2, 3 }, function(_, data)
-        PS.FollowerVisibility:SetInt(data)
-    end).ComboBox:SetSortItems(false)
-
-    cbElement = PS.AddComboBox(panel, "What followers can you see?", PS.FollowerEnabled:GetInt(), values, { 1, 2, 3 }, function(_, data)
-        PS.FollowerEnabled:SetInt(data)
-    end)
-    cbElement.ComboBox:SetSortItems(false)
-    cbElement:DockMargin(0, 0, 0, 18)
+            -- Display
+            if base.VisibilitySettings.FirstPersonOptional then
+                table.insert(flags, PS_VIS_FIRSTPERSON)
+            end
+            local dis = GetConVar("ps_display_" .. base.VisibilitySettings.CVarSuffix)
+            PS.AddFlagsSelector(panel, base.VisibilitySettings.DisplayText, dis:GetInt(), flags, yTexts, fTexts, function(value)
+                dis:SetInt(value)
+            end):DockMargin(0, 0, 0, 18)
+        end
+    end
 
     hook.Run("PS_SettingsPanel", panel)
 end

@@ -67,7 +67,7 @@ end
 local COLOR_WHITE = Color(255, 255, 255)
 local draw_ShadowedText = PS.ShadowedText
 function ITEM:OnPlayerDraw(ply, flags, ent, mods)
-    if PS.GamemodeCheck(self) or not PS:CanSeeAccessory(ply) then return end
+    if PS.GamemodeCheck(self) or not ply:PS_CanSeeItem(self.ID) then return end
     ent = ent or ply
 
     local pos, ang = self:GetBonePosAng(ent, "ValveBiped.Bip01_Head1")

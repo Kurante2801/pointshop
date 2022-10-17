@@ -1,5 +1,6 @@
 local BASE = {}
 
+BASE.ID = "jumppack"
 BASE.Base = "model"
 
 function BASE:OnMove(ply, mods, data)

@@ -16,7 +16,11 @@ function EFFECT:Think()
     end
 
     local ply = owner:GetOwner()
-    if not IsValid(ply) or not PS:CanSeeFollower(ply) then return true end
+    local isFirstPerson = false
+    if ply == LocalPlayer():GetViewEntity() then
+        isFirstPerson = not ply:ShouldDrawLocalPlayer()
+    end
+    if not IsValid(ply) or not ply:PS_CanSeeItem("skull_follower", isFirstPerson) then return true end
 
     local pos = owner:GetPos()
     self.Emitter:SetPos(pos)

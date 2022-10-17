@@ -27,9 +27,14 @@ NetMessage("PS_ModQueue", function(_, ply)
     end
 end)
 NetMessage("PS_SetNetworkVisibility", function(_, ply)
-    ply:SetNWInt("ps_accessoryvisibility", ply:GetInfoNum("ps_accessoryvisibility", 1))
-    ply:SetNWInt("ps_trailvisibility", ply:GetInfoNum("ps_trailvisibility", 1))
-    ply:SetNWInt("ps_followervisibility", ply:GetInfoNum("ps_followervisibility", 1))
+    local var, base
+    for _, base_id in ipairs(PS.BaseVisibilities) do
+        base = PS.Bases[base_id]
+        if not base then continue end
+
+        var = "ps_visibility_" .. base.VisibilitySettings.CVarSuffix
+        ply:SetNWInt(var, ply:GetInfoNum(var, 0))
+    end
 end)
 -- Points from player to player
 NetMessage("PS_SendPoints", function(_, ply)

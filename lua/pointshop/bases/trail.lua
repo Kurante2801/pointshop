@@ -13,6 +13,13 @@ BASE.LifeTime = 4.25
 PS.Trails = PS.Trails or {}
 local trails = PS.Trails
 
+BASE.VisibilitySettings = {
+    VisibilityText = "Who can see your Trails?",
+    DisplayText = "Display Trails from: ",
+    CVarSuffix = "trail",
+    FirstPersonOptional = false
+}
+
 function PS:SpriteTrail(ply, color, startW, endW, lifeT, mat)
     local ent = ents.Create("lbg_trail")
     ent:SetColor(color)

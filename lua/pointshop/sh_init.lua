@@ -63,6 +63,9 @@ PS.MasterBase = {
     ToString = function(this)
         return "[base] " .. this.ID
     end,
+    CanPlayerSee = function(this, ply)
+        return true
+    end, RegisterVisibility = false
 }
 
 local emptyFunc = function() end
@@ -114,6 +117,11 @@ end
 
 -- Creation
 function PS:NewBase(base)
+    -- Create CVars
+    if base.VisibilitySettings then
+        self:EnableVisibilitySettings(base)
+    end
+
     base.__index = function(this, key)
         -- First we try to get value from 'this'
         local value = rawget(this, key)
@@ -136,6 +144,29 @@ function PS:NewBase(base)
     end
 
     PS.Bases[base.ID] = setmetatable(base, base)
+end
+
+PS.BaseVisibilities = PS.BaseVisibilities or {}
+function PS:EnableVisibilitySettings(base)
+    if not table.HasValue(self.BaseVisibilities, base.ID) then
+        table.insert(self.BaseVisibilities, base.ID)
+    end
+
+    if not CLIENT then return end
+
+    local visibilityName = "ps_visibility_" .. base.VisibilitySettings.CVarSuffix
+
+    CreateClientConVar(visibilityName, bit.bor(PS_VIS_FIRSTPERSON, PS_VIS_NONFRIENDS, PS_VIS_OTHERTEAMS), true, true)
+    local display = CreateClientConVar("ps_display_" .. base.VisibilitySettings.CVarSuffix, bit.bor(PS_VIS_FIRSTPERSON, PS_VIS_NONFRIENDS, PS_VIS_OTHERTEAMS), true, true)
+
+    base.CanPlayerSee = function(this, target, isFirstPerson)
+        return self.CanSeeItem(target, display:GetInt(), target:GetNWInt(visibilityName, 0), isFirstPerson)
+    end
+
+    cvars.AddChangeCallback(visibilityName, function()
+        net.Start("PS_SetNetworkVisibility")
+        net.SendToServer()
+    end)
 end
 
 function PS:NewCategory(category)

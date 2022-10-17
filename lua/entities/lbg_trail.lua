@@ -57,7 +57,7 @@ function ENT:Think()
     elseif owner == LocalPlayer() then
         self.ShouldDraw = true
     else
-        self.ShouldDraw = PS:CanSeeTrail(owner)
+        self.ShouldDraw = owner:PS_CanSeeItem()
     end
 
     if not self.ShouldDraw then return end

@@ -116,7 +116,13 @@ end
 
 function ENT:Draw()
     local owner = self:GetOwner()
-    if not IsValid(owner) or not self.Item or not IsValid(self.CSModel) then return end
+    local isFirstPerson = false
+
+    if owner == LocalPlayer():GetViewEntity() then
+        isFirstPerson = not owner:ShouldDrawLocalPlayer()
+    end
+    if not IsValid(owner) or not self.Item or not IsValid(self.CSModel) or not owner:PS_CanSeeItem(self.Item.ID, isFirstPerson) then return end
+
     self.Item:OnPreModelDraw(owner, self, self.CSModel)
     self.CSModel:DrawModel()
 end
