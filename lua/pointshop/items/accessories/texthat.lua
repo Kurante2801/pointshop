@@ -8,6 +8,7 @@ ITEM.CharLimit = 32
 
 ITEM.PlayerColorable = true -- Can trail color be the same as PLAYER:GetPlayerColor
 ITEM.RainbowColorable = true -- Can trail color be a rainbow
+ITEM.PositionMinMax = { -10, 10 }
 
 ITEM.Props = {
     ["bubble"] = {
@@ -40,11 +41,18 @@ function ITEM:SanitizeTable(mods)
         mods.colorMode = "color"
     end
 
+    if not isvector(mods.textPos) then
+        mods.textPos = nil
+    else
+        mods.textPos = Vector(math.Clamp(mods.textPos.x, self.PositionMinMax[1], self.PositionMinMax[2]), math.Clamp(mods.textPos.y, self.PositionMinMax[1], self.PositionMinMax[2]), math.Clamp(mods.textPos.z, self.PositionMinMax[1], self.PositionMinMax[2]))
+    end
+
     return {
         color = "#" .. PS.SanitizeHEX(mods.color, true),
         colorMode = mods.colorMode or "color",
         colorSpeed = isnumber(mods.colorSpeed) and math.Clamp(mods.colorSpeed, 1, 14) or 7,
-        text = isstring(mods.text) and string.sub(mods.text, 1, self.CharLimit) or nil
+        text = isstring(mods.text) and string.sub(mods.text, 1, self.CharLimit) or nil,
+        textPos = mods.textPos
     }
 end
 
@@ -73,6 +81,12 @@ function ITEM:OnPlayerDraw(ply, flags, ent, mods)
     local pos, ang = self:GetBonePosAng(ent, "ValveBiped.Bip01_Head1")
     if not pos or not ang then return end
 
+    -- Apply mods
+    if ply then
+        mods.textPos = mods.textPos or Vector()
+        pos = pos - ang:Up() * mods.textPos.x - ang:Right() * mods.textPos.y + ang:Forward() * mods.textPos.z
+    end
+
     ang:RotateAroundAxis(ang:Right(), 90)
     ang:RotateAroundAxis(ang:Forward(), -90)
     pos = pos + ang:Right() * -12
@@ -94,6 +108,7 @@ function ITEM:OnCustomizeSetup(panel, mods)
     mods.color = mods.color or "#FFFFFFFF"
     mods.colorMode = mods.colorMode or "color"
     mods.colorSpeed = mods.colorSpeed or 7
+    mods.textPos = mods.textPos or Vector()
 
     local values = { "Color" }
     local datas = { "color" }
@@ -117,6 +132,19 @@ function ITEM:OnCustomizeSetup(panel, mods)
     PS.AddTextEntry(panel, "Text", mods.text or "", self.CharLimit, function(value)
         PS:SendModification(self.ID, "text", value)
     end)
+
+    PS.AddSlider(panel, "Position X", mods.textPos.x, self.PositionMinMax[1], self.PositionMinMax[2], 0.5, function(value)
+        mods.textPos.x = value
+        PS:SendModification(self.ID, "textPos", mods.textPos)
+    end)
+    PS.AddSlider(panel, "Position Y", mods.textPos.y, self.PositionMinMax[1], self.PositionMinMax[2], 0.5, function(value)
+        mods.textPos.y = value
+        PS:SendModification(self.ID, "textPos", mods.textPos)
+    end)
+    PS.AddSlider(panel, "Position Z", mods.textPos.z, self.PositionMinMax[1], self.PositionMinMax[2], 0.5, function(value)
+        mods.textPos.z = value
+        PS:SendModification(self.ID, "textPos", mods.textPos)
+    end):DockMargin(0, 0, 0, 32)
 end
 
 PS.TextHatColorsCache = PS.TextHatColorsCache or {}
