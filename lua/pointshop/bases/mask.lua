@@ -57,6 +57,10 @@ if CLIENT then
     local dis = GetConVar("ps_display_accessory")
 
     function BASE:CanPlayerSee(target, isFirstPerson)
+        if not dis then
+            dis = GetConVar("ps_display_accessory")
+        end
+
         return PS.CanSeeItem(target, dis:GetInt(), target:GetNWInt("ps_visibility_accessory"), isFirstPerson)
     end
 end

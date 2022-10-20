@@ -1118,7 +1118,7 @@ function PANEL:MakeSubcategories(button, category)
     for id, item in pairs(PS.Items) do
         if item.Category ~= category.ID then continue end
 
-        if not button.SubcategoryGrids[item.Subcategory] then
+        if not item.Subcategory or not button.SubcategoryGrids[item.Subcategory] then
             if not default then continue end
             item.Subcategory = default
         end
