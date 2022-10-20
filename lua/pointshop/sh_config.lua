@@ -8,7 +8,6 @@ PS.Config.ShopChatCommand = "!shop" -- Chat command to open the shop, set to bla
 PS.Config.NotifyOnJoin = true -- Should players be notified about opening the shop when they spawn?
 PS.Config.PointsOverTime = true -- Should players be given points over time?
 PS.Config.PointsOverTimeDelay = 1 -- If so, how many minutes apart?
-PS.Config.PointsOverTimeAmount = 10 -- And if so, how many points to give after the time?
 PS.Config.AdminCanAccessAdminTab = false -- Can Admins access the Admin tab?
 PS.Config.SuperAdminCanAccessAdminTab = true -- Can SuperAdmins access the Admin tab?
 PS.Config.CanPlayersGivePoints = true -- Can players give points away to other players?
@@ -21,6 +20,14 @@ PS.Config.CalculateSellPrice = function(ply, item) return math.Round(item.Price 
 PS.Config.GetDefaultPlayermodel = function()
     return "models/player/group01/male_02.mdl"
 end
+PS.Config.GetPointsOverTime = function(ply)
+    if ply:IsUserGroup("premium") or ply:IsAdmin() then
+        return 25
+    end
+
+    return 10
+end
+
 
 PS.Config.DefaultTheme = "default"
 PS.Config.Themes = {}

@@ -60,8 +60,9 @@ function Player:PS_NetReady()
             if not IsValid(self) then
                 timer.Remove(name)
             else
-                self:PS_GivePoints(PS.Config.PointsOverTimeAmount)
-                self:PS_Notify(string.format("You've been given %s %s for playing on the server!", PS.Config.PointsOverTimeAmount, PS.Config.PointsName))
+                local points = PS.Config.GetPointsOverTime(self)
+                self:PS_GivePoints(points)
+                self:PS_Notify(string.format("You've been given %s %s for playing on the server!", points, PS.Config.PointsName))
             end
         end)
     end
