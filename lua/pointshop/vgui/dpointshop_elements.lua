@@ -1,3 +1,5 @@
+-- This is over 1k lines long... good luck!
+
 local COLOR_WHITE = Color(255, 255, 255)
 local draw_RoundedBox = draw.RoundedBox
 local draw_RoundedBoxEx = draw.RoundedBoxEx
@@ -1200,3 +1202,33 @@ function PANEL:OnValueChanged(bool)
 end
 
 vgui.Register("PS_ButtonBool", PANEL, "PS_Button")
+
+PANEL = {}
+AccessorFunc(PANEL, "_icon16", "Icon16", FORCE_BOOL)
+
+function PANEL:Init()
+    self:Dock(TOP)
+    self:SetTall(46)
+    self:SetIcon16(false)
+
+    PS:FadeHover(self, "Foreground2Color", 125, 6, 6)
+    PS:FadeFunction(self, "PS_FadeActive", "MainColor", 255, 6, 6, function(this) return this:FadeFunction() end)
+end
+
+function PANEL:FadeFunction()
+    return self.Panel:IsVisible()
+end
+
+function PANEL:Paint(w, h)
+end
+
+function PANEL:PaintOver(w, h)
+    if self.IconMaterial then
+        local size = self._icon16 and 16 or h
+        PS.ShadowedImage(self.IconMaterial, 0, 0, size, size, COLOR_WHITE, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+    end
+
+    PS.ShadowedText(self._text, self:GetFont(), h, h * 0.5, COLOR_WHITE, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+end
+
+vgui.Register("PS_SidebarButton", PANEL, "PS_Button")

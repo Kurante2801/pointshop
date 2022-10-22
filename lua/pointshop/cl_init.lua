@@ -41,17 +41,10 @@ end
 
 -- menu stuff
 function PS:ToggleMenu()
-    if not IsValid(PS.ShopMenu) then
-        PS.ShopMenu = vgui.Create("PS_Menu")
-        PS.ShopMenu:SetVisible(false)
-    end
-
-    if PS.ShopMenu:IsVisible() then
-        PS.ShopMenu:Hide()
-        gui.EnableScreenClicker(false)
+    if IsValid(PS.ShopMenu) then
+        PS.ShopMenu:SetVisible(not PS.ShopMenu:IsVisible())
     else
-        PS.ShopMenu:Show()
-        gui.EnableScreenClicker(true)
+        PS.ShopMenu = vgui.Create("PS_Menu")
     end
 end
 

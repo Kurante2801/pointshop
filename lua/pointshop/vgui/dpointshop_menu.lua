@@ -44,47 +44,27 @@ function PS.Mask(panel, x, y, w, h, callback)
     render.ClearStencil()
 end
 
-if file.Exists("resource/fonts/rubik-semibold.ttf", "THIRDPARTY") then
-    surface.CreateFont("PS_Label", {
-        font = "Rubik SemiBold",
-        size = 20, shadow = false, antialias = true,
-    })
+local font = file.Exists("resource/fonts/rubik-semibold.ttf", "THIRDPARTY") and "Rubik SemiBold" or "Circular Std Medium"
 
-    surface.CreateFont("PS_Header", {
-        font = "Rubik SemiBold",
-        size = 30, shadow = false, antialias = true,
-    })
+surface.CreateFont("PS_Label", {
+    size = 20,
+    font = font, shadow = false, antialias = true,
+})
 
-    surface.CreateFont("PS_LabelLarge", {
-        font = "Rubik SemiBold",
-        size = 26, shadow = false, antialias = true,
-    })
+surface.CreateFont("PS_Header", {
+    size = 30,
+    font = font, shadow = false, antialias = true,
+})
 
-    surface.CreateFont("PS_LabelSmall", {
-        font = "Rubik SemiBold",
-        size = 16, shadow = false, antialias = true,
-    })
-else
-    surface.CreateFont("PS_Label", {
-        font = "Circular Std Medium",
-        size = 20, shadow = false, antialias = true,
-    })
+surface.CreateFont("PS_LabelLarge", {
+    size = 26,
+    font = font, shadow = false, antialias = true,
+})
 
-    surface.CreateFont("PS_Header", {
-        font = "Circular Std Medium",
-        size = 30, shadow = false, antialias = true,
-    })
-
-    surface.CreateFont("PS_LabelLarge", {
-        font = "Circular Std Medium",
-        size = 26, shadow = false, antialias = true,
-    })
-
-    surface.CreateFont("PS_LabelSmall", {
-        font = "Circular Std Medium",
-        size = 16, shadow = false, antialias = true,
-    })
-end
+surface.CreateFont("PS_LabelSmall", {
+    size = 16,
+    font = font, shadow = false, antialias = true,
+})
 
 function PS:FadeFunction(panel, transition, color_string, alpha, speed, round, func)
     panel:TDLib()
@@ -412,7 +392,7 @@ PANEL.BarHeight = 34
 function PANEL:Init()
     self:SetSize(math.Clamp(1090, 0, ScrW()), math.Clamp(768, 0, ScrH()))
     self:Center()
-    self:MakePopup()
+    self:MakePopup(true)
     self:SetDraggable(false)
     self:SetTitle("")
     self:DockPadding(0, self.BarHeight, 0, 0)
@@ -437,8 +417,8 @@ function PANEL:Init()
     self.Settings = self:Add("PS_ButtonIcon")
     self.Settings:SetIcon("lbg_pointshop/derma/settings.png", self.BarHeight, self.BarHeight)
     self.Settings.DoClick = function(this)
-        if this.Active then return end
-        this.Active = true
+        if this.Panel:IsVisible() then return end
+
         self:OnItemSelected(PS.ActiveItem)
         self:HidePanels()
         self.Settings.Panel:Show()
@@ -879,57 +859,37 @@ function PANEL:PopulateCategories()
     self.Categories = {}
     for i, cat in ipairs(cats) do
         -- Create Button
-        local button = self.CategoriesContainer:Add("DButton")
+        local button = self.CategoriesContainer:Add("PS_SidebarButton")
         table.insert(self.Categories, button)
 
         button.Category = cat
-        button:Dock(TOP)
         button:SetZPos(i)
-        button:SetTall(46)
+        button:SetText(cat.Name)
 
         if cat.Material then
-            button.Mat = Material(cat.Material, "smooth")
+            button:SetIcon(cat.Material)
         elseif cat.Icon then
-            button.Mat = Material(string.format("icon16/%s.png", cat.Icon))
+            button:SetIcon(string.format("icon16/%s.png", cat.Icon))
+            button:SetIcon16(true)
         end
 
-        button:TDLib()
-            :ClearPaint()
-            :Text("")
-            :On("PaintOver", function(this, w, h)
-                PS.ShadowedText(cat.Name, "PS_Label", h, h * 0.5, COLOR_WHITE, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-            end)
-            :On("DoClick", function(this)
-                if this.Active then return end
+        button.DoClick = function(this)
+            if not IsValid(this.Panel) or this.Panel:IsVisible() then return end
 
-                self:HidePanels()
-                this.Active = true
+            self:HidePanels()
+            this.Panel:SetVisible(true)
 
-                -- Disable item buttons and set bottom right texts to be the category's text
-                PS.ActiveCategory = cat
-                self:OnItemSelected(nil)
-                self:SetDataText(cat.Name or cat.ID, cat.Description or "")
+            -- Disable item buttons and set bottom right texts to be the category's text
+            PS.ActiveCategory = cat
+            self:OnItemSelected(nil)
+            self:SetDataText(cat.Name or cat.ID, cat.Description or "")
 
-                if IsValid(this.CategoryPanel) then
-                    this.CategoryPanel:Show()
-                end
-            end)
-            PS:FadeHover(button, "Foreground2Color", 125, 6, 6)
-            PS:FadeActive(button, "MainColor", 255, 6, 6)
-
-        if cat.Material then
-            button:On("PaintOver", function(this, w, h)
-                PS.ShadowedImage(this.Mat, 0, 0, h, h)
-            end)
-        elseif cat.Icon then
-            button:On("PaintOver", function(this, w, h)
-                PS.ShadowedImage(this.Mat, h * 0.5, h * 0.5, 16, 16, COLOR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-            end)
+            this.Panel:Show()
         end
 
         local custom = hook.Run("PS_CustomCategoryTab", cat)
         if IsValid(custom) then
-            button.CategoryPanel = custom
+            button.Panel = custom
             custom:SetParent(self.Container)
             custom:Dock(FILL)
             custom:Hide()
@@ -942,56 +902,56 @@ function PANEL:PopulateCategories()
         end
     end
 
-    self.AdminButton = self.Left:Add("DButton")
+    self.AdminButton = self.Left:Add("PS_SidebarButton")
     self.AdminButton:Dock(BOTTOM)
-    self.AdminButton:SetZPos(i)
-    self.AdminButton:SetTall(46)
-    self.AdminButton.Mat = Material("lbg_pointshop/derma/admin_panel_settings.png", "noclamp smooth")
+    self.AdminButton:SetText("Admin Panel")
+    self.AdminButton:SetIcon("lbg_pointshop/derma/admin_panel_settings.png")
+
+    self.PointsButton = self.Left:Add("PS_SidebarButton")
+    self.PointsButton:Dock(BOTTOM)
+    self.PointsButton:SetText("Give Points")
+    self.PointsButton:SetIcon("lbg_pointshop/derma/payments.png")
+    self.PointsButton:SetVisible(PS.Config.CanPlayersGivePoints)
 
     self.AdminButton.Panel = self.Container:Add("DPanel")
     self:MakeAdminPanel(self.AdminButton.Panel)
-    self.AdminButton.Panel:Hide()
+    self.AdminButton.Panel:SetVisible(false)
 
-    self.AdminButton:TDLib()
-        :ClearPaint()
-        :Text("")
-        :On("PaintOver", function(this, w, h)
-            PS.ShadowedText("Admin Panel", "PS_Label", h, h * 0.5, COLOR_WHITE, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-            PS.ShadowedImage(this.Mat, 0, 0, h, h)
-        end)
-        :On("DoClick", function(this)
-            if this.Active then return end
+    self.PointsButton.Panel = self.Container:Add("DPanel")
+    self:MakePointsPanel(self.PointsButton.Panel)
+    self.PointsButton.Panel:SetVisible(false)
 
-            self:OnItemSelected(PS.ActiveItem)
-            self:HidePanels()
-            this.Active = true
-            self.AdminButton.Panel:Show()
-            self:SetDataText("Admin Panel", "")
-        end)
-        PS:FadeHover(self.AdminButton, "Foreground2Color", 125, 6, 6)
-        PS:FadeActive(self.AdminButton, "MainColor", 255, 6, 6)
+    self.AdminButton.DoClick = function(this)
+        if this.Panel:IsVisible() then return end
+
+        self:OnItemSelected(PS.ActiveItem)
+        self:HidePanels()
+        this.Panel:Show()
+        self:SetDataText(this:GetText(), "")
+    end
+
+    self.PointsButton.DoClick = function(this)
+        self.AdminButton.DoClick(this)
+    end
 
     self.Settings.Panel = self.Container:Add("DPanel")
     self:MakeSettingsPanel(self.Settings.Panel)
-    self.Settings.Panel:Hide()
+    self.Settings.Panel:SetVisible()
+
 
     self.Categories[1]:DoClick()
 end
 
 function PANEL:HidePanels()
     for _, button in ipairs(self.Categories) do
-        button.Active = false
-        if IsValid(button.CategoryPanel) then
-            button.CategoryPanel:Hide()
-        end
+        button.Panel:SetVisible(false)
     end
     self.CustomizePanel:Clear()
-    self.CustomizePanel:Hide()
+    self.CustomizePanel:SetVisible(false)
 
-    self.AdminButton.Active = false
-    self.AdminButton.Panel:Hide()
-    self.Settings.Active = false
-    self.Settings.Panel:Hide()
+    self.AdminButton.Panel:SetVisible(false)
+    self.Settings.Panel:SetVisible(false)
+    self.PointsButton.Panel:SetVisible(false)
 end
 
 function PANEL:SetDataText(title, desc)
@@ -1031,12 +991,12 @@ end
 
 -- Category without subcategories
 function PANEL:MakeCategory(button, category)
-    button.CategoryPanel = self.Container:Add("PS_ScrollPanel")
-    button.CategoryPanel:Dock(FILL)
-    button.CategoryPanel:DockMargin(12, 12, 0, 12)
-    button.CategoryPanel:Hide()
+    button.Panel = self.Container:Add("PS_ScrollPanel")
+    button.Panel:Dock(FILL)
+    button.Panel:DockMargin(12, 12, 0, 12)
+    button.Panel:Hide()
 
-    button.Grid = button.CategoryPanel:Add("DIconLayout")
+    button.Grid = button.Panel:Add("DIconLayout")
     button.Grid:Dock(FILL)
     button.Grid:SetSpaceX(12)
     button.Grid:SetSpaceY(12)
@@ -1054,15 +1014,15 @@ end
 
 -- Category with subcategories
 function PANEL:MakeSubcategories(button, category)
-    button.CategoryPanel = self.Container:Add("PS_ScrollPanel")
-    button.CategoryPanel:Dock(FILL)
-    button.CategoryPanel:DockMargin(12, 12, 0, 12)
-    button.CategoryPanel:Hide()
+    button.Panel = self.Container:Add("PS_ScrollPanel")
+    button.Panel:Dock(FILL)
+    button.Panel:DockMargin(12, 12, 0, 12)
+    button.Panel:Hide()
 
     button.SubcategoryGrids = {}
 
     for id, subcategory in SortedPairsByMemberValue(category.Subcategories, "Order") do
-        local panel = button.CategoryPanel
+        local panel = button.Panel
         local tall = 32
 
         local header = panel:Add("DPanel")
@@ -1165,6 +1125,21 @@ function PANEL:MakeSettingsPanel(panel)
     hook.Run("PS_SettingsPanel", panel)
 end
 
+local id_text, id_func
+if PS.Config.DataProvider == "sql" then
+    id_text = "SID64"
+    id_func = function(ply) return ply:SteamID64() end
+elseif PS.Config.DataProvider == "json" then
+    id_text = "SID"
+    id_func = function(ply) return ply:SteamID() end
+elseif PS.Config.DataProvider == "sql" or PS.Config.DataProvider == "flatfile" then
+    id_text = "SID"
+    id_func = function(ply) return string.Replace(ply:SteamID(), ':', '_') end
+else
+    id_text = "UID"
+    id_func = function(ply) return ply:UniqueID() end
+end
+
 function PANEL:MakeAdminPanel(panel)
     panel:Dock(FILL)
     panel:DockMargin(12, 12, 0, 12)
@@ -1191,7 +1166,7 @@ function PANEL:MakeAdminPanel(panel)
         this:SetValue(value or "")
 
         for _, ply in ipairs(player.GetAll()) do
-            this:AddChoice(string.format("%s (%s) [UID: %s]", ply:Name(), ply:SteamID(), ply:UniqueID()), ply)
+            this:AddChoice(string.format("%s (%s: %s)", ply:Name(), id_text, id_func(ply) or "90071996842377216 + ?"), ply)
         end
         if this:IsMenuOpen() then
             this:CloseMenu()
@@ -1224,6 +1199,7 @@ function PANEL:MakeAdminPanel(panel)
     setPoints:SetText("Set Points: ")
 
     local entry = pointsContainer:Add("DNumberWang")
+    entry:SetKeyboardInputEnabled(true)
     entry:Dock(FILL)
     entry:DockMargin(6, 0, 0, 0)
     entry:SetTextColor(COLOR_WHITE)
@@ -1247,6 +1223,95 @@ function PANEL:MakeAdminPanel(panel)
         if not value or not IsValid(panel.Player) then return end
 
         net.Start("PS_SetPoints")
+        net.WriteEntity(panel.Player)
+        net.WriteUInt(value, 32)
+        net.SendToServer()
+    end
+end
+
+function PANEL:MakePointsPanel(panel)
+    panel:Dock(FILL)
+    panel:DockMargin(12, 12, 0, 12)
+    panel.Paint = emptyfunc
+
+    panel.Player = nil
+
+    local playerContainer = panel:Add("EditablePanel")
+    playerContainer:Dock(TOP)
+    playerContainer:SetTall(128)
+
+    local avatar = playerContainer:Add("AvatarImage")
+    avatar:Dock(LEFT)
+    avatar:DockMargin(0, 0, 16, 0)
+    avatar:SetWide(128)
+
+    local selector = playerContainer:Add("PS_ComboBox")
+    selector:Dock(TOP)
+    selector:SetTall(32)
+    selector:DockMargin(0, 0, 0, 16)
+    selector.DoClick = function(this)
+        local value = this:GetOptionText(this:GetSelectedID())
+        this:Clear()
+        this:SetValue(value or "")
+
+        for _, ply in ipairs(player.GetAll()) do
+            if ply ~= LocalPlayer() then
+                this:AddChoice(string.format("%s (%s: %s)", ply:Name(), id_text, id_func(ply) or "90071996842377216 + ?"), ply)
+            end
+        end
+        if this:IsMenuOpen() then
+            this:CloseMenu()
+        else
+            this:OpenMenu()
+        end
+    end
+
+    local points = playerContainer:Add("PS_Button")
+    points:Dock(TOP)
+    points:DockMargin(0, 0, 0, 16)
+    points:SetThemeMainColor("Foreground1Color")
+    points:SetTall(32)
+    points:SetMouseInputEnabled(false)
+    points:SetContentAlignment(4)
+    points:SetText("Points: ???")
+    points.Think = function(this)
+        if panel.Player then
+            this:SetText("Points: " .. panel.Player:PS_GetPoints())
+        end
+    end
+
+    local pointsContainer = playerContainer:Add("EditablePanel")
+    pointsContainer:Dock(TOP)
+    pointsContainer:SetTall(32)
+
+    local givePoints = pointsContainer:Add("PS_Button")
+    givePoints:Dock(LEFT)
+    givePoints:SetWide(120)
+    givePoints:SetText("Give Points: ")
+
+    local entry = pointsContainer:Add("DNumberWang")
+    entry:Dock(FILL)
+    entry:DockMargin(6, 0, 0, 0)
+    entry:SetTextColor(COLOR_WHITE)
+    entry:SetCursorColor(COLOR_WHITE)
+    entry:SetPaintBackground(false)
+    entry:SetFont("PS_Label")
+    entry:SetMinMax(0, 2147483647)
+    entry.Paint = function(this, w, h)
+        draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
+        derma.SkinHook("Paint", "TextEntry", this, w, h)
+    end
+
+    selector.OnSelect = function(this, id, text, ply)
+        panel.Player = ply
+        avatar:SetPlayer(ply, 128)
+    end
+
+    givePoints.DoClick = function(this)
+        local value = tonumber(entry:GetValue())
+        if not value or not IsValid(panel.Player) then return end
+
+        net.Start("PS_SendPoints")
         net.WriteEntity(panel.Player)
         net.WriteUInt(value, 32)
         net.SendToServer()

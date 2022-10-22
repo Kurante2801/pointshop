@@ -39,18 +39,16 @@ end)
 -- Points from player to player
 NetMessage("PS_SendPoints", function(_, ply)
     if not PS.Config.CanPlayersGivePoints then return end
-
-    local other net.ReadEntity()
+    local other = net.ReadEntity()
     local points = PS:ValidatePoints(net.ReadUInt(32))
     if points == 0 then return end
     if not IsValid(other) or not other:IsPlayer() then return end
 
-    if ply.PS_LastGavePoints and CurTime() - ply.PS_LastGavePoints < 5 then
+    if ply.PS_LastGavePoints and CurTime() - ply.PS_LastGavePoints < 3 then
         ply:PS_Notify("Slow down! You can't give away points that fast.")
         return
     end
     ply.PS_LastGavePoints = CurTime()
-
     ply:PS_TakePoints(points)
     ply:PS_Notify("You gave ", other:Nick(), " ", points, " of your ", PS.Config.PointsName, ".")
     other:PS_GivePoints(points)
