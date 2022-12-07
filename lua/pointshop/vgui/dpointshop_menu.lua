@@ -66,16 +66,6 @@ surface.CreateFont("PS_LabelSmall", {
     font = font, shadow = false, antialias = true,
 })
 
-function PS:FadeFunction(panel, transition, color_string, alpha, speed, round, func)
-    panel:TDLib()
-        :SetupTransition(transition, speed, func)
-        :On("Paint", function(this, w, h)
-            draw_RoundedBox(round, 0, 0, w, h, ColorAlpha(self:GetThemeVar(color_string), alpha * this[transition]))
-        end)
-
-    return panel
-end
-
 function PS:FadeHover(panel, color_string, alpha, speed, round)
     return self:FadeFunction(panel, "PS_FadeHover", color_string, alpha, speed, round, TDLibUtil.HoverFunc)
 end
@@ -141,6 +131,30 @@ local foreground1roundfunc = function(panel, w, h)
     draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
 end
 
+-- Sets RBG of target to those of source, setting a custom alpha
+-- (this is to avoid calling ColorAlpha and making a new Color every frame)
+function PS.TransferColor(source, target, alpha)
+    target.r = source.r
+    target.g = source.g
+    target.b = source.b
+    target.a = alpha
+
+    return target
+end
+local TransferColor = PS.TransferColor
+
+function PS:FadeFunction(panel, transition, color_string, alpha, speed, round, func)
+    panel.CachedColors = panel.CachedColors or {}
+    panel.CachedColors[transition] = Color(0, 0, 0)
+    panel:TDLib()
+        :SetupTransition(transition, speed, func)
+        :On("Paint", function(this, w, h)
+            draw_RoundedBox(round, 0, 0, w, h, TransferColor(self:GetThemeVar(color_string), panel.CachedColors[transition], alpha * this[transition]))
+        end)
+
+    return panel
+end
+
 function PS.AddSlider(panel, text, value, min, max, snap, callback)
     local slider = panel:Add("PS_HorizontalSlider")
     slider.TextArea:SetWide(80)
@@ -195,10 +209,13 @@ function PS.AddBool(panel, text, noText, yesText, value, callback)
     container.No:SizeToContents()
     container.No:SetWide(container.No:GetWide() + 12)
     container.No:SetupTransition("Selected", 6, function() return not value end)
+    container.HoverColor = Color(0, 0, 0)
+    container.SelectedColor = Color(0, 0, 0)
+
     container.No.Paint = function(_this, w, h)
         draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground2Color"))
-        draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 75 * _this.MouseHover))
-        draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 255 * _this.Selected))
+        draw.RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar("MainColor"), _this.HoverColor, 75 * _this.MouseHover))
+        draw.RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar("MainColor"), _this.SelectedColor, 255 * _this.Selected))
     end
     container.No.DoClick = function()
         value = false
@@ -212,10 +229,13 @@ function PS.AddBool(panel, text, noText, yesText, value, callback)
     container.Yes:SizeToContents()
     container.Yes:SetWide(container.Yes:GetWide() + 12)
     container.Yes:SetupTransition("Selected", 6, function() return value end)
+    container.HoverColor = Color(0, 0, 0)
+    container.SelectedColor = Color(0, 0, 0)
+
     container.Yes.Paint = function(_this, w, h)
         draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground2Color"))
-        draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 75 * _this.MouseHover))
-        draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 255 * _this.Selected))
+        draw.RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar("MainColor"), _this.HoverColor, 75 * _this.MouseHover))
+        draw.RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar("MainColor"), _this.SelectedColor, 255 * _this.Selected))
     end
     container.Yes.DoClick = function()
         value = true
@@ -256,9 +276,10 @@ function PS.AddSelector(panel, text, value, values, callback)
         button:SetText(v)
         button:SetTall(32)
         button:SetupTransition("Selected", 6, function() return value == v end)
+        button.SelectedColor = Color(0, 0, 0)
         button.Paint = function(_this, w, h)
             draw.RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
-            draw.RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 255 * _this.Selected))
+            draw.RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar("MainColor"), _this.SelectedColor, 255 * _this.Selected))
         end
         button.DoClick = function()
             value = v
@@ -481,6 +502,9 @@ function PANEL:Init()
     self.Buy:SetIcon("lbg_pointshop/derma/shopping_cart.png", 18, 18)
     self.Buy:SetHoverText(nil)
     self.Buy:SetHoverIcon("lbg_pointshop/derma/shopping_cart.png", 18, 18)
+    self.Buy.DownColor = Color(0, 0, 0)
+    self.Buy.HoverColor = Color(0, 0, 0)
+
     self.Buy.DoClick = function(this)
         if not this.Item then return end
         local ply = LocalPlayer()
@@ -513,8 +537,8 @@ function PANEL:Init()
                 draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(this._dis))
             end
 
-            draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(this._down), this._downA * this.ButtonDown))
-            draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(this._hover), this._hoverA * this.MouseHover))
+            draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar(this._down), this.DownColor, this._downA * this.ButtonDown))
+            draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar(this._hover), this.HoverColor, this._hoverA * this.MouseHover))
         end)
         :On("Think", function(this)
             if this.PressedOnce and not this:IsHovered() then
@@ -644,6 +668,8 @@ function PANEL:Init()
     self.Equip:SetWide(111)
     self.Equip:SetText("Equip")
     self.Equip.HasItemEquipped = function(this) return this.Item and LocalPlayer():PS_HasItemEquipped(this.Item.ID) end
+    self.Equip.DownColor = Color(0, 0, 0)
+    self.Equip.HoverColor = Color(0, 0, 0)
     self.Equip:TDLib()
         :ClearPaint()
         :On("Paint", function(this, w, h)
@@ -657,8 +683,8 @@ function PANEL:Init()
                 draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(this._dis))
             end
 
-            draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(this._down), this._downA * this.ButtonDown))
-            draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(this._hover), this._hoverA * this.MouseHover))
+            draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar(this._down), this.DownColor, this._downA * this.ButtonDown))
+            draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar(this._hover), this.HoverColor, this._hoverA * this.MouseHover))
         end)
 
         self.Equip.DoClick = function(this)
@@ -730,12 +756,13 @@ function PANEL:Init()
         self.MDL:SetLookAt(at)
     end
     self.ModelHeight.Slider.Knob.Mat = Material("lbg_pointshop/derma/unfold_more.png", "noclamp smooth")
+    self.ModelHeight.Slider.Knob.HoverColor = Color(0, 0, 0)
     self.ModelHeight.Slider.Knob:TDLib()
         :ClearPaint()
         :SetupTransition("MouseHover", 6, TDLibUtil.HoverFunc)
         :On("Paint", function(this, w, h)
             draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("MainColor"))
-            draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("Foreground1Color"), 125 * this.MouseHover))
+            draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar("Foreground1Color"), this.HoverColor, 125 * this.MouseHover))
             PS.ShadowedImage(this.Mat, w * 0.5, h * 0.5, 16, 16, COLOR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
         end)
 

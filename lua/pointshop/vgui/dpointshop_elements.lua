@@ -15,6 +15,8 @@ local foreground1roundfunc = function(panel, w, h)
     draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
 end
 
+local TransferColor = PS.TransferColor
+
 local PANEL = {}
 AccessorFunc(PANEL, "_color", "ThemeColor", FORCE_STRING)
 AccessorFunc(PANEL, "_hovertext", "HoverText")
@@ -43,6 +45,9 @@ function PANEL:Init()
     self:TDLib()
         :SetupTransition("ButtonDown", 6, downfunc)
         :SetupTransition("MouseHover", 6, TDLibUtil.HoverFunc)
+
+        self.HoverColor = Color(0, 0, 0)
+        self.DownColor = Color(0, 0, 0)
 end
 
 function PANEL:Paint(w, h)
@@ -51,8 +56,8 @@ function PANEL:Paint(w, h)
     else
         draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(self._dis))
     end
-    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._hover), self._hoverA * self.MouseHover))
-    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._down), self._downA * self.ButtonDown))
+    draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar(self._hover), self.HoverColor, self._hoverA * self.MouseHover))
+    draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar(self._down), self.DownColor, self._downA * self.ButtonDown))
 end
 
 function PANEL:PaintOver(w, h)
@@ -492,6 +497,9 @@ function PANEL:Init()
     self:TDLib()
         :SetupTransition("MouseHover", 12, TDLibUtil.HoverFunc)
         :SetupTransition("ItemActive", 12, function(this) return PS.ActiveItem == this.Item.ID or PS.ActiveItem == this.Item end)
+
+    self.HoverColor = Color(0, 0, 0)
+    self.ActiveColor = Color(0, 0, 0)
 end
 
 function PANEL:Paint(w, h)
@@ -504,8 +512,8 @@ function PANEL:Paint(w, h)
     end
 
     draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(self._back))
-    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 125 * self.MouseHover))
-    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 255 * self.ItemActive))
+    draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar("MainColor"), self.HoverColor, 125 * self.MouseHover))
+    draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar("MainColor"), self.ActiveColor, 255 * self.ItemActive))
     draw_RoundedBox(6, 6, 6, w - 12, w - 12, PS:GetThemeVar("BackgroundColor"))
 
     if not self.Item then return end
@@ -593,18 +601,21 @@ function PANEL:Init()
     self.VBar:SetWide(22)
     self.VBar:SetHideButtons(true)
     self.VBar:TDLib():SetupTransition("MouseHover", 6, function(this) return self:IsHovered() or this:IsHovered() or this.btnGrip:IsHovered() or this.btnGrip.Depressed end)
+    self.VBar.HoverColor = Color(0, 0, 0)
     self.VBar.Paint = function(this, w, h)
         draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
-        draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("Foreground2Color"), 255 * this.MouseHover))
+        draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar("Foreground2Color"), this.HoverColor, 255 * this.MouseHover))
     end
 
     self.VBar.btnGrip:TDLib()
         :SetupTransition("MouseHover", 12, TDLibUtil.HoverFunc)
         :SetupTransition("ButtonDown", 6, function(this) return this.Depressed end)
+    self.VBar.btnGrip.DownColor = Color(0, 0, 0)
+    self.VBar.btnGrip.HoverColor = Color(0, 0, 0)
     self.VBar.btnGrip.Paint = function(this, w, h)
         draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("MainColor"))
-        draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("Foreground1Color"), 200 * this.ButtonDown))
-        draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("Foreground1Color"), 125 * this.MouseHover))
+        draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar("Foreground1Color"), this.DownColor, 200 * this.ButtonDown))
+        draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar("Foreground1Color"), this.HoverColor, 125 * this.MouseHover))
     end
 end
 
@@ -623,9 +634,10 @@ function PANEL:Init()
     self.Label:SetMouseInputEnabled(true)
     self.Label:DockPadding(0, 0, 0, 0)
     self.Label:TDLib():SetupTransition("ScratchHover", 6, function() return self.Scratch:IsHovered() end)
+    self.Label.ScratchColor = Color(0, 0, 0)
     self.Label.Paint = function(this, w, h)
         draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar("Foreground1Color"))
-        draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar("MainColor"), 255 * this.ScratchHover))
+        draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar("MainColor"), this.ScratchColor, 255 * this.ScratchHover))
     end
 
     self.Scratch = self.Label:Add("DNumberScratch")
@@ -711,6 +723,9 @@ function PANEL:Init()
     self:TDLib():On("PaintOver", function(this, w, h)
         PS.ShadowedImage(this.ArrowMat, w - 8, h * 0.5, 20, 20, COLOR_WHITE, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
     end)
+
+    self.HoverColor = Color(0, 0, 0)
+    self.DownColor = Color(0, 0, 0)
 end
 
 function PANEL:Paint(w, h)
@@ -720,8 +735,8 @@ function PANEL:Paint(w, h)
     else
         draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(self._dis))
     end
-    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._hover), self._hoverA * self.MouseHover))
-    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._down), self._downA * self.ButtonDown))
+    draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar(self._hover), self.HoverColor, self._hoverA * self.MouseHover))
+    draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar(self._down), self.DownColor, self._downA * self.ButtonDown))
 end
 
 function PANEL:Clear()
@@ -1166,6 +1181,10 @@ function PANEL:Init()
     self:SetValue(false)
     self:SetThemeBackgroundColor("Foreground2Color")
     self:SetupTransition("BoolActive", 6, function(this) return this._bool end)
+
+    self.HoverColor = Color(0, 0, 0)
+    self.DownColor = Color(0, 0, 0)
+    self.ActiveColor = Color(0, 0, 0)
 end
 
 function PANEL:SetValue(bool)
@@ -1178,10 +1197,10 @@ function PANEL:GetValue()
 end
 
 function PANEL:Paint(w, h)
-    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._back)))
-    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._main), 255 * self.BoolActive))
-    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._hover), self._hoverA * self.MouseHover))
-    draw_RoundedBox(6, 0, 0, w, h, ColorAlpha(PS:GetThemeVar(self._down), self._downA * self.ButtonDown))
+    draw_RoundedBox(6, 0, 0, w, h, PS:GetThemeVar(self._back))
+    draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar(self._main), self.ActiveColor, 255 * self.BoolActive))
+    draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar(self._hover), self.HoverColor, self._hoverA * self.MouseHover))
+    draw_RoundedBox(6, 0, 0, w, h, TransferColor(PS:GetThemeVar(self._down), self.DownColor, self._downA * self.ButtonDown))
 end
 
 function PANEL:GetContentSize()
