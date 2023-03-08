@@ -6,7 +6,7 @@ ENT.Type = "anim"
 ENT.Base = "base_anim"
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
-ENT.PrintName = "LBG Follower"
+ENT.PrintName = "PS Follower"
 ENT.Spawnable = true
 ENT.DisableDuplicator = true
 ENT.DisablePhysGun = true

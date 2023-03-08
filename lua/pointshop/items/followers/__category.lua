@@ -1,7 +1,7 @@
 local CATEGORY = {}
 
 CATEGORY.ID = "followers"
-CATEGORY.Material = "lbg_pointshop/derma/mood.png"
+CATEGORY.Material = "pointshop/derma/mood.png"
 CATEGORY.Name = "Followers"
 CATEGORY.Description = "Models that follow you around"
 CATEGORY.Order = 8

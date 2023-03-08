@@ -135,9 +135,9 @@ hook.Add("PostDrawTranslucentRenderables", "PS_PlayerDraw", function(_, skybox)
 end)
 
 hook.Add("ShutDown", "PS_WebMaterialsCleanup", function()
-    local files, _ = file.Find("lbg_pointshop_webmaterials/*", "DATA")
+    local files, _ = file.Find("pointshop_webmaterials/*", "DATA")
     for _, filename in ipairs(files) do
-        file.Delete("lbg_pointshop_webmaterials/" .. filename)
+        file.Delete("pointshop_webmaterials/" .. filename)
     end
 end)
 

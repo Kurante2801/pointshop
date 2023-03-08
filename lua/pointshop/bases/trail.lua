@@ -21,7 +21,7 @@ BASE.VisibilitySettings = {
 }
 
 function PS:SpriteTrail(ply, color, startW, endW, lifeT, mat)
-    local ent = ents.Create("lbg_trail")
+    local ent = ents.Create("ps_trail")
     ent:SetColor(color)
     ent:SetStartWidth(startW)
     ent:SetEndWidth(endW)

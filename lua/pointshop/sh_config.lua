@@ -1,6 +1,6 @@
 PS.Config = {}
 -- Edit below
-PS.Config.CommunityName = "Laid Back Gaming"
+PS.Config.CommunityName = "My Community"
 PS.Config.DataProvider = "sql"
 PS.Config.ShopKey = "F3" -- Any Uppercase key or blank to disable
 PS.Config.ShopCommand = "ps_shop" -- Console command to open the shop, set to blank to disable

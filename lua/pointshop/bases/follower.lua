@@ -11,7 +11,7 @@ BASE.VisibilitySettings = {
 }
 
 function BASE:CreateEnt(ply, mods)
-    local ent = ents.Create("lbg_follower")
+    local ent = ents.Create("ps_follower")
     ent:SetOwner(ply)
     ent:SetPos(ply:EyePos())
     ent:Spawn()

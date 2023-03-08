@@ -305,7 +305,7 @@ end
 function PS:UpdateClient()
     for id, item in pairs(PS.Items) do
         if item.WebMaterial then
-            local path = string.format("lbg_pointshop_webmaterials/%s.png", id)
+            local path = string.format("pointshop_webmaterials/%s.png", id)
             item.Material = "data/" .. path
 
             if CLIENT then
@@ -318,7 +318,7 @@ function PS:UpdateClient()
 
     for id, category in pairs(PS.Categories) do
         if category.WebMaterial then
-            local path = string.format("lbg_pointshop_webmaterials/category_%s.png", id)
+            local path = string.format("pointshop_webmaterials/category_%s.png", id)
             category.Material = "data/" .. path
 
             if CLIENT then
@@ -332,8 +332,8 @@ function PS:UpdateClient()
     if not CLIENT then return end
 
     -- Download materials
-    if not file.Exists("lbg_pointshop_webmaterials", "DATA") then
-        file.CreateDir("lbg_pointshop_webmaterials")
+    if not file.Exists("pointshop_webmaterials", "DATA") then
+        file.CreateDir("pointshop_webmaterials")
     end
 end
 

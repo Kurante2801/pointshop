@@ -1,7 +1,7 @@
 AddCSLuaFile()
 ENT.Type = "anim"
 
-ENT.PrintName = "LBG Trail"
+ENT.PrintName = "PS Trail"
 ENT.Spawnable = true
 ENT.DisableDuplicator = true
 ENT.DisablePhysGun = true

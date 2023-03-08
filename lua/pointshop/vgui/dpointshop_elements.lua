@@ -491,8 +491,8 @@ function PANEL:Init()
     self:DockPadding(6, 6, 6, 24)
     self:SetText("")
 
-    self.OwnedMat = Material("lbg_pointshop/derma/sell.png")
-    self.EquippedMat = Material("lbg_pointshop/derma/checkroom.png")
+    self.OwnedMat = Material("pointshop/derma/sell.png")
+    self.EquippedMat = Material("pointshop/derma/checkroom.png")
 
     self:TDLib()
         :SetupTransition("MouseHover", 12, TDLibUtil.HoverFunc)
@@ -666,7 +666,7 @@ function PANEL:Init()
     end
 
     self.Slider.Knob:SetSize(18, 18)
-    self.Slider.Knob.Mat = Material("lbg_pointshop/derma/slider_knob.png", "noclamp smooth")
+    self.Slider.Knob.Mat = Material("pointshop/derma/slider_knob.png", "noclamp smooth")
     self.Slider.Knob.Paint = function(this, w, h)
         PS.ShadowedImage(this.Mat, 0, 0, w, h, PS:GetThemeVar(this._color))
     end
@@ -719,7 +719,7 @@ function PANEL:Init()
 
     self:Clear()
 
-    self.ArrowMat = Material("lbg_pointshop/derma/expand_more.png", "noclamp smooth")
+    self.ArrowMat = Material("pointshop/derma/expand_more.png", "noclamp smooth")
     self:TDLib():On("PaintOver", function(this, w, h)
         PS.ShadowedImage(this.ArrowMat, w - 8, h * 0.5, 20, 20, COLOR_WHITE, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
     end)

@@ -221,13 +221,13 @@ function BASE:CreateModels()
     for id, prop in pairs(self.Props) do
         -- We show ERRORs so admins know when model is missing
         if not file.Exists(prop.model, "GAME") and not LocalPlayer():IsAdmin() then
-            print(string.format("[LBG PointShop] Model %s from %s does not exist, skipping...", prop_id, self.ID))
+            print(string.format("[PointShop] Model %s from %s does not exist, skipping...", prop_id, self.ID))
             continue
         end
 
         local mdl = ClientsideModel(prop.model)
         if not mdl then
-            print(string.format("[LBG PointShop] Could not create model %s from %s, skipping...", prop_id, self.ID))
+            print(string.format("[PointShop] Could not create model %s from %s, skipping...", prop_id, self.ID))
             return empty
         end
 

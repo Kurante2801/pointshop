@@ -3,12 +3,12 @@ BASE.ID = "avatarframe"
 
 function BASE:OnEquip(ply, mods)
     if PS.GamemodeCheck(self) then return end
-    ply:SetNWString("LBG_AvatarFrame", self.ID)
+    ply:SetNWString("PS_AvatarFrame", self.ID)
 end
 
 function BASE:OnHolster(ply)
     if PS.GamemodeCheck(self) then return end
-    ply:SetNWString("LBG_AvatarFrame", "")
+    ply:SetNWString("PS_AvatarFrame", "")
 end
 
 -- OnEquip is not called when joining the server
@@ -64,8 +64,8 @@ end
 function PANEL:Think()
     if not IsValid(self.Player) or self.CustomMaterial then return end
 
-    if self.Player:GetNWString("LBG_AvatarFrame", "") ~= self.AvatarFrame then
-        self:SetItem(self.Player:GetNWString("LBG_AvatarFrame", ""))
+    if self.Player:GetNWString("PS_AvatarFrame", "") ~= self.AvatarFrame then
+        self:SetItem(self.Player:GetNWString("PS_AvatarFrame", ""))
     end
 
     if self.Item or self.AttemptedSteam then return end
@@ -113,7 +113,7 @@ function PANEL:RequestSteamFrame()
     local name = PS.AvatarFrames[ply:SteamID64()]
     if name then
         if string.EndsWith(name, ".png") then
-            self.Material = Material("data/lbg_steam_avatarframes/" .. name, "noclamp smooth")
+            self.Material = Material("data/ps_steam_avatarframes/" .. name, "noclamp smooth")
             print(CurTime())
         else
             self.Material = Material("steam_avatarframes/" .. name)
@@ -150,11 +150,11 @@ function PANEL:RequestSteamFrame()
         http.Fetch(url, function(src)
             if not IsValid(self) or not IsValid(ply) then return end
 
-            if not file.Exists("lbg_steam_avatarframes", "DATA") then
-                file.CreateDir("lbg_steam_avatarframes")
+            if not file.Exists("ps_steam_avatarframes", "DATA") then
+                file.CreateDir("ps_steam_avatarframes")
             end
 
-            local path = "lbg_steam_avatarframes/" .. name
+            local path = "ps_steam_avatarframes/" .. name
             if not file.Exists(path, "DATA") then
                 file.Write(path, src)
             end
